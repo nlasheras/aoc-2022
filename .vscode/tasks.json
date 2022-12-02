@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "build aoc-autobuild",
+            "command": "cargo.exe build --manifest-path target/aoc/aoc-autobuild/Cargo.toml --bin=aoc-autobuild"
+        }
+    ]
+}

@@ -9,4 +9,4 @@ First day is usually easy and intented for setting up stuff. I used Belen's [aoc
 
 ### Day 2
 
-Second day I started with a quick and dirty solution without any kind of Rust idiom. In the afternoon I had some free time that I used to clean the solution a bit and I used the `match` expressions quite extensively. 
+Second day I started with a quick and dirty solution without any kind of Rust idiom. In the afternoon I had some free time that I used to clean the solution a bit and I used the `match` expressions quite extensively. Also I used a bit of time on figuring out how to debug from VSCode (using [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)). 
