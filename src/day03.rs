@@ -11,7 +11,7 @@ pub fn parse_input(input: &str) -> Vec<Vec<char>> {
 }
 
 fn intersection(set: &[char], other: &[char]) -> Vec<char> {
-    set.into_iter().filter(|item| other.contains(item)).map(|c| *c).collect()
+    set.iter().cloned().filter(|item| other.contains(item)).collect()
 }
 
 fn get_failing_item(sack: &Vec<char>) -> char {
@@ -30,31 +30,25 @@ fn get_item_priority(c: char) -> u8 {
 
 #[aoc(day3, part1)]
 pub fn sum_mismatched_priorities(input: &Vec<Vec<char>>) -> u64 {
-    let mut sum = 0;
-    for sack in input {
-        let item = get_failing_item(&sack);
-        sum += get_item_priority(item) as u64;
-    }
-    sum
+    input.into_iter().fold(0, |sum, sack| {
+       let item = get_failing_item(sack);
+       sum + get_item_priority(item) as u64  
+    })
 }
 
 fn get_badge(input: &[Vec<char>]) -> char {
-    let mut sacks = input.iter();
-    let mut set = sacks.next().unwrap().clone();
-    set = sacks.fold(set, |set, sack| {
-        intersection(&set, &sack)
-    });
-    set[0]
+    // the shared element between all the sets
+    input.iter().cloned().reduce(|set, other| {
+        intersection(&set, &other)
+    }).unwrap()[0]
 }
 
 #[aoc(day3, part2)]
 pub fn sum_badge_priorities(input: &Vec<Vec<char>>) -> u64 {
-    let mut sum = 0;
-    for sacks in input.chunks(3) {
+    input.chunks(3).fold(0, |sum, sacks| {
         let item = get_badge(sacks);
-        sum += get_item_priority(item) as u64;
-    }
-    sum
+        sum + get_item_priority(item) as u64
+    })
 }
 
 #[cfg(test)]
