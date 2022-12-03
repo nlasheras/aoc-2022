@@ -110,13 +110,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_day1_part1() {
+    fn test_day2_part1() {
         let input: Vec<(char, char)> = vec![('A', 'Y'), ('B', 'X'), ('C', 'Z')];
         assert_eq!(solve_part1(&input), 15);
     }
 
     #[test]
-    fn test_day1_part2() {
+    fn test_day2_part2() {
         let input: Vec<(char, char)> = vec![('A', 'Y'), ('B', 'X'), ('C', 'Z')];
         assert_eq!(solve_part2(&input), 12);
     }
