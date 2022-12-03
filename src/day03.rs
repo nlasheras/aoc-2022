@@ -1,6 +1,5 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
-use std::collections::BTreeSet;
 
 fn string_to_rucksack(s: &str) -> Vec<char> {
     s.chars().collect()
@@ -11,12 +10,14 @@ pub fn parse_input(input: &str) -> Vec<Vec<char>> {
     input.lines().map(string_to_rucksack).collect()
 }
 
+fn intersection(set: &[char], other: &[char]) -> Vec<char> {
+    set.into_iter().filter(|item| other.contains(item)).map(|c| *c).collect()
+}
+
 fn get_failing_item(sack: &Vec<char>) -> char {
     let len = sack.len();
-    let left = BTreeSet::from_iter(sack[0..len/2].iter());
-    let right = BTreeSet::from_iter(sack[len/2..len].iter());    
-    let mut same = left.intersection(&right);
-    **same.next().expect("There should be 1 wrong item")
+    let same = intersection(&sack[0..len/2], &sack[len/2..len]);
+    same[0]
 }
 
 fn get_item_priority(c: char) -> u8 {
@@ -39,13 +40,11 @@ pub fn sum_mismatched_priorities(input: &Vec<Vec<char>>) -> u64 {
 
 fn get_badge(input: &[Vec<char>]) -> char {
     let mut sacks = input.iter();
-    let mut set = BTreeSet::from_iter(sacks.next().unwrap().iter());
-    for sack in sacks {
-        let current = BTreeSet::from_iter(sack.iter());
-        let same = set.intersection(&current);
-        set = BTreeSet::from_iter(same.map(|r| *r).collect::<Vec<&char>>());
-    }
-    **set.iter().next().expect("There should be 1 shared item")
+    let mut set = sacks.next().unwrap().clone();
+    set = sacks.fold(set, |set, sack| {
+        intersection(&set, &sack)
+    });
+    set[0]
 }
 
 #[aoc(day3, part2)]
