@@ -4,26 +4,31 @@ use regex::Regex;
 use std::cmp;
 use std::ops::Range;
 
+type Assignment = Range<u8>;
+
 #[aoc_generator(day4)]
-pub fn parse_input(input: &str) -> Vec<(Range<u8>, Range<u8>)> {
-    let re = Regex::new(r"(\d+)").unwrap();
+pub fn parse_input(input: &str) -> Vec<(Assignment, Assignment)> {
+    let re = Regex::new(r"(\d+)-(\d+),(\d+)-(\d+)").unwrap();
     input
         .lines()
         .map(|s| {
-            let msg = "Invalid input!";
+            let error_msg = "Invalid input!";
             let numbers: Vec<u8> = re
-                .find_iter(s)
+                .captures(s)
+                .expect(error_msg)
+                .iter()
+                .skip(1) // capture 0 is the whole matching pattern
                 .map(|s| {
-                    let s2 = s.as_str();
-                    s2.parse::<u8>().expect(msg)
+                    let s2 = s.unwrap().as_str();
+                    s2.parse::<u8>().expect(error_msg)
                 })
-                .collect();
+                .collect(); // get the 4 numbers as a Vec<u8>
             ((numbers[0]..numbers[1] + 1), (numbers[2]..numbers[3] + 1))
         })
         .collect()
 }
 
-fn overlap_range(pair: &(Range<u8>, Range<u8>)) -> Option<Range<u8>> {
+fn overlap_range(pair: &(Assignment, Assignment)) -> Option<Assignment> {
     let start = cmp::max(pair.0.start, pair.1.start);
     let end = cmp::min(pair.0.end, pair.1.end);
     if start < end {
@@ -33,7 +38,7 @@ fn overlap_range(pair: &(Range<u8>, Range<u8>)) -> Option<Range<u8>> {
 }
 
 #[aoc(day4, part1)]
-pub fn count_fully_contained(input: &Vec<(Range<u8>, Range<u8>)>) -> usize {
+pub fn count_fully_contained(input: &Vec<(Assignment, Assignment)>) -> usize {
     input
         .into_iter()
         .filter(|pair| {
@@ -46,7 +51,7 @@ pub fn count_fully_contained(input: &Vec<(Range<u8>, Range<u8>)>) -> usize {
 }
 
 #[aoc(day4, part2)]
-pub fn count_overlaps(input: &Vec<(Range<u8>, Range<u8>)>) -> usize {
+pub fn count_overlaps(input: &Vec<(Assignment, Assignment)>) -> usize {
     input
         .into_iter()
         .map(overlap_range)

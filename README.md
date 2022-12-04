@@ -14,3 +14,7 @@ Second day I started with a quick and dirty solution without any kind of Rust id
 ### Day 3
 
 Nothing big today. For my first implementation I relied on `BTreeSet` to perform the intersection of the rucksacks. Then when cleaning the code I saw that the input wasn't that big and doing the vector intersection is faster and the code looks a bit cleaner. This has been a good exercise to play around with functional programming and understanding when to use `cloned` to avoid having to perform an extra `map` to dereference all the elements. 
+
+### Day 4
+
+The main difficulty as a Rust newbie has been parsing the input. I spent quite a lot of time battling with the `regex` crate and figuring out the proper way to get the list of range pairs. The problem itself was very similar to AABB collision, so after reading I more or less knew what approach I would take.
