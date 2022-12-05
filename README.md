@@ -18,3 +18,7 @@ Nothing big today. For my first implementation I relied on `BTreeSet` to perform
 ### Day 4
 
 The main difficulty as a Rust newbie has been parsing the input. I spent quite a lot of time battling with the `regex` crate and figuring out the proper way to get the list of range pairs. The problem itself was very similar to AABB collision, so after reading I more or less knew what approach I would take.
+
+### Day 5
+
+Today I had a busy morning so I settle for solving the problem with not the most elegant option. Since tomorrow is Independence Day here, I'll have some time to research a bit and clean up today's. 
