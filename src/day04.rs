@@ -19,8 +19,7 @@ pub fn parse_input(input: &str) -> Vec<(Assignment, Assignment)> {
                 .iter()
                 .skip(1) // capture 0 is the whole matching pattern
                 .map(|s| {
-                    let s2 = s.unwrap().as_str();
-                    s2.parse::<u8>().expect(error_msg)
+                    s.unwrap().as_str().parse::<u8>().expect(error_msg)
                 })
                 .collect(); // get the 4 numbers as a Vec<u8>
             ((numbers[0]..numbers[1] + 1), (numbers[2]..numbers[3] + 1))
@@ -43,7 +42,7 @@ pub fn count_fully_contained(input: &Vec<(Assignment, Assignment)>) -> usize {
         .into_iter()
         .filter(|pair| {
             if let Some(overlap) = overlap_range(pair) {
-                return overlap.len() == pair.0.len() || overlap.len() == pair.1.len();
+                return overlap.len() == cmp::min(pair.0.len(), pair.1.len());
             }
             false
         })
