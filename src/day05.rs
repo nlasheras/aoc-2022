@@ -2,8 +2,8 @@ use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use regex::Regex;
 
-type Stack = Vec<char>;
-type Input = (Vec<Stack>, Vec<(u8, u8, u8)>);
+type Stack = String;
+type Input = (Vec<Stack>, Vec<(usize, usize, usize)>);
 
 #[aoc_generator(day5)]
 pub fn parse_input(input: &str) -> Input {
@@ -23,17 +23,17 @@ pub fn parse_input(input: &str) -> Input {
 
     let re = Regex::new(r"move (\d+) from (\d+) to (\d+)").unwrap();
 
-    let moves: Vec<(u8, u8, u8)> = parts[1]
+    let moves: Vec<(usize, usize, usize)> = parts[1]
         .lines()
         .map(|s| {
             let error_msg = "Invalid input!";
-            let numbers: Vec<u8> = re
+            let numbers: Vec<usize> = re
                 .captures(s)
                 .expect(error_msg)
                 .iter()
                 .skip(1) // capture 0 is the whole matching pattern
-                .map(|s| s.unwrap().as_str().parse::<u8>().expect(error_msg))
-                .collect(); // get the 4 numbers as a Vec<u8>
+                .map(|s| s.unwrap().as_str().parse::<usize>().expect(error_msg))
+                .collect(); // get the 4 numbers as a Vec<usize>
             (numbers[0], numbers[1] - 1, numbers[2] - 1)
         })
         .collect();
@@ -41,29 +41,20 @@ pub fn parse_input(input: &str) -> Input {
     (stacks, moves)
 }
 
-fn move_crates_from_stack(stacks:&mut Vec<Stack>, from: u8, to: u8, count: u8) {
-        let mut tmp = Vec::new();
-        for _ in 0..count {
-            let c = stacks
-                .iter_mut()
-                .nth(from as usize)
-                .unwrap()
-                .pop()
-                .unwrap();
-            tmp.push(c)
-        }
-        stacks
-            .iter_mut()
-            .nth(to as usize)
-            .unwrap()
-            .extend(tmp.into_iter().rev())
-
+fn move_crates_from_stack(stacks: &mut Vec<Stack>, from: usize, to: usize, count: usize) {
+    let source = stacks.iter_mut().nth(from).unwrap();
+    let moved_crates = source.split_off(source.len() - count);
+    stacks
+        .iter_mut()
+        .nth(to)
+        .unwrap()
+        .extend(moved_crates.chars().into_iter());
 }
 
 fn get_top_of_stacks(stacks: &Vec<Stack>) -> String {
     let mut ret = String::new();
     for stack in stacks.iter() {
-        ret.push_str(&stack.last().unwrap().to_string());
+        ret.push_str(&stack.chars().into_iter().last().unwrap().to_string());
     }
     ret.to_string()
 }
