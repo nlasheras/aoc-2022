@@ -22,3 +22,7 @@ The main difficulty as a Rust newbie has been parsing the input. I spent quite a
 ### Day 5
 
 Today I had a busy morning so I settle for solving the problem with not the most elegant option. Since tomorrow is Independence Day here, I'll have some time to research a bit and clean up today's. 
+
+### Day 6 
+
+Today the problem seemed pretty straightforward, but I ended up stumbling with a funny issue. Since I started using `u8` as my marker position, when running with the input it started failing, since Rust was wrapping around. I learned my lesson and will use `u64` from now on. 
