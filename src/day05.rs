@@ -1,18 +1,16 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use itertools::Itertools;
 use regex::Regex;
 
-type Stack = String;
-type Input = (Vec<Stack>, Vec<(usize, usize, usize)>);
+type Stack = Vec<char>;
+type Procedure = Vec<(usize, usize, usize)>;
+type Input = (Vec<Stack>, Procedure);
 
-#[aoc_generator(day5)]
-pub fn parse_input(input: &str) -> Input {
-    let parts: Vec<&str> = input.split("\n\n").collect();
-
-    let stack_input = parts[0];
-    let count = (stack_input.lines().nth(0).unwrap().len() + 2) / 4;
+fn parse_stacks(input: &str) -> Vec<Stack> {
+    let count = (input.lines().nth(0).unwrap().len() + 2) / 4;
     let mut stacks = vec![Stack::new(); count];
-    for line in stack_input.lines().rev().skip(1) {
+    for line in input.lines().rev().skip(1) {
         for i in 0..count {
             let c = line.chars().nth(i * 4 + 1).unwrap();
             if c != ' ' {
@@ -20,41 +18,49 @@ pub fn parse_input(input: &str) -> Input {
             }
         }
     }
+    stacks
+}
 
+fn parse_procedure(input: &str) -> Procedure {
     let re = Regex::new(r"move (\d+) from (\d+) to (\d+)").unwrap();
-
-    let moves: Vec<(usize, usize, usize)> = parts[1]
+    input
         .lines()
         .map(|s| {
-            let error_msg = "Invalid input!";
-            let numbers: Vec<usize> = re
-                .captures(s)
-                .expect(error_msg)
+            re.captures(s)
+                .unwrap()
                 .iter()
-                .skip(1) // capture 0 is the whole matching pattern
-                .map(|s| s.unwrap().as_str().parse::<usize>().expect(error_msg))
-                .collect(); // get the 4 numbers as a Vec<usize>
-            (numbers[0], numbers[1] - 1, numbers[2] - 1)
+                .skip(1)
+                .map(|m| m.unwrap().as_str().parse::<usize>().unwrap())
+                .collect_tuple()
+                .unwrap()
         })
-        .collect();
+        .collect()
+}
+
+#[aoc_generator(day5)]
+pub fn parse_input(input: &str) -> Input {
+    let parts: Vec<&str> = input.split("\n\n").collect();
+
+    let stacks = parse_stacks(parts[0]);
+    let moves = parse_procedure(parts[1]);
 
     (stacks, moves)
 }
 
 fn move_crates_from_stack(stacks: &mut Vec<Stack>, from: usize, to: usize, count: usize) {
-    let source = stacks.iter_mut().nth(from).unwrap();
+    let source = stacks.iter_mut().nth(from - 1).unwrap();
     let moved_crates = source.split_off(source.len() - count);
     stacks
         .iter_mut()
-        .nth(to)
+        .nth(to - 1)
         .unwrap()
-        .extend(moved_crates.chars().into_iter());
+        .extend(moved_crates.into_iter());
 }
 
 fn get_top_of_stacks(stacks: &Vec<Stack>) -> String {
     let mut ret = String::new();
     for stack in stacks.iter() {
-        ret.push_str(&stack.chars().into_iter().last().unwrap().to_string());
+        ret.push_str(&stack.into_iter().last().unwrap().to_string());
     }
     ret.to_string()
 }
