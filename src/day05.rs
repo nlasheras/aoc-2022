@@ -41,39 +41,12 @@ pub fn parse_input(input: &str) -> Input {
     (stacks, moves)
 }
 
-#[aoc(day5, part1)]
-pub fn get_top_of_stacks(input: &Input) -> String {
-    let mut stacks = input.0.clone();
-
-    for (count, from, to) in input.1.iter() {
-        for _ in 0..*count {
-            let c = stacks
-                .iter_mut()
-                .nth(*from as usize)
-                .unwrap()
-                .pop()
-                .unwrap();
-            stacks.iter_mut().nth(*to as usize).unwrap().push(c)
-        }
-    }
-
-    let mut ret = String::new();
-    for stack in stacks.iter() {
-        ret.push_str(&stack.last().unwrap().to_string());
-    }
-    ret.to_string()
-}
-
-#[aoc(day5, part2)]
-pub fn get_top_of_stacks_move_multiple(input: &Input) -> String {
-    let mut stacks = input.0.clone();
-
-    for (count, from, to) in input.1.iter() {
+fn move_crates_from_stack(stacks:&mut Vec<Stack>, from: u8, to: u8, count: u8) {
         let mut tmp = Vec::new();
-        for _ in 0..*count {
+        for _ in 0..count {
             let c = stacks
                 .iter_mut()
-                .nth(*from as usize)
+                .nth(from as usize)
                 .unwrap()
                 .pop()
                 .unwrap();
@@ -81,16 +54,42 @@ pub fn get_top_of_stacks_move_multiple(input: &Input) -> String {
         }
         stacks
             .iter_mut()
-            .nth(*to as usize)
+            .nth(to as usize)
             .unwrap()
             .extend(tmp.into_iter().rev())
-    }
 
+}
+
+fn get_top_of_stacks(stacks: &Vec<Stack>) -> String {
     let mut ret = String::new();
     for stack in stacks.iter() {
         ret.push_str(&stack.last().unwrap().to_string());
     }
     ret.to_string()
+}
+
+#[aoc(day5, part1)]
+pub fn get_top_after_move(input: &Input) -> String {
+    let mut stacks = input.0.clone();
+
+    for (count, from, to) in input.1.iter() {
+        for _ in 0..*count {
+            move_crates_from_stack(&mut stacks, *from, *to, 1);
+        }
+    }
+
+    get_top_of_stacks(&stacks)
+}
+
+#[aoc(day5, part2)]
+pub fn get_top_after_move_with_9001(input: &Input) -> String {
+    let mut stacks = input.0.clone();
+
+    for (count, from, to) in input.1.iter() {
+        move_crates_from_stack(&mut stacks, *from, *to, *count)
+    }
+
+    get_top_of_stacks(&stacks)
 }
 
 #[cfg(test)]
@@ -110,12 +109,12 @@ move 1 from 1 to 2";
     #[test]
     fn test_day5_part1() {
         let input = parse_input(DAY05_EXAMPLE);
-        assert_eq!(get_top_of_stacks(&input), "CMZ");
+        assert_eq!(get_top_after_move(&input), "CMZ");
     }
 
     #[test]
     fn test_day5_part2() {
         let input = parse_input(DAY05_EXAMPLE);
-        assert_eq!(get_top_of_stacks_move_multiple(&input), "MCD");
+        assert_eq!(get_top_after_move_with_9001(&input), "MCD");
     }
 }
