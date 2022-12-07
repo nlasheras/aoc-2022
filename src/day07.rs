@@ -100,6 +100,24 @@ fn sum_size_with_limit(tree: NodeRef<DirEntry>, limit: Option<u64>) -> u64 {
     })
 }
 
+#[allow(dead_code)]
+fn println(tree: &NodeRef<DirEntry>) {
+    let mut output = String::new();
+    tree.traverse_pre_order().for_each(|node| {
+        let depth = node.ancestors().count();
+        let indent = "  ".repeat(depth);
+        let entry = node.data();
+        let info = if entry.is_dir() {
+            "(dir)".to_string()
+        } else {
+            format!("(file, size={})", entry.file_size)
+        };
+        let line = format!("{}- {} {}\n", indent, entry.name, info);
+        output.push_str(&line);
+    });
+   println!("{}", output);
+}
+
 #[aoc(day7, part1)]
 pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
     let dir = parse_commands(input);
@@ -174,4 +192,5 @@ $ ls
         let input = parse_input(DAY07_EXAMPLE);
         assert_eq!(find_directory_free_30gb(&input), 24_933_642);
     }
+
 }
