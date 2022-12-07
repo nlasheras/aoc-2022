@@ -97,35 +97,22 @@ pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
 }
 
 
-fn smallest_bigger_than<'a>(root: &'a Tree<DirEntry>, tree: &'a NodeRef<'a, DirEntry>, _size: u64) -> Option<NodeRef<'a, DirEntry>> {
-    let mut size = sum_file_size(&tree);
-    let mut ret = tree.node_id();
+fn smallest_bigger_than(tree: &NodeRef<DirEntry>, minimum_size: u64) -> Option<u64> {
+    let mut best_size = u64::MAX;
 
-    for entry in tree.children() {
-        if entry.data().file_size == 0 {
-            let entry_size = sum_file_size(&entry);
-            if entry_size >= _size && entry_size < size {
-                size = entry_size;
-                ret = entry.node_id();
+    tree.traverse_level_order().skip(1).for_each(|node| {
+        if node.data().is_dir() {
+            let size = sum_file_size(&node);
+            if size >= minimum_size && size < best_size {
+                best_size = size;
             }
-        }
+        } 
+    });
+
+    if best_size != u64::MAX {
+        return Some(best_size)
     }
 
-    for entry in tree.children() {
-        if entry.data().file_size == 0 {
-            if let Some(candidate) = smallest_bigger_than(root, &entry, _size) {
-                let entry_size = sum_file_size(&candidate);
-                if entry_size >= _size && entry_size < size {
-                    size = entry_size;
-                    ret = candidate.node_id();
-                }
-            }
-        }
-    }
-
-    if size >= _size {
-        return root.get(ret);
-    }
     None
 }
 
@@ -133,15 +120,10 @@ fn smallest_bigger_than<'a>(root: &'a Tree<DirEntry>, tree: &'a NodeRef<'a, DirE
 pub fn find_directory_free_30gb(input: &Vec<String>) -> u64 {
     let dir = parse_commands(input);
     let total = sum_file_size(&dir.root().unwrap());
-    let free = 70000000 - total;
-    let missing = 30000000 - free;
+    let free = 70_000_000 - total;
+    let missing = 30_000_000 - free;
     
-    let binding = dir.root().unwrap();
-    let candidate = smallest_bigger_than(&dir, &binding, missing);
-    if let Some(directory) = candidate {
-        return sum_file_size(&directory);
-    }
-    0
+    smallest_bigger_than(&dir.root().unwrap(), missing).unwrap()
 }
 
 #[cfg(test)]
@@ -175,13 +157,13 @@ $ ls
     #[test]
     fn test_day7_example() {
         let input = parse_input(DAY07_EXAMPLE);
-        assert_eq!(sum_directories_smaller_than_100k(&input), 95437);
+        assert_eq!(sum_directories_smaller_than_100k(&input), 95_437);
     }
 
     #[test]
     fn test_day7_example2() {
         let input = parse_input(DAY07_EXAMPLE);
-        assert_eq!(find_directory_free_30gb(&input), 24933642);
+        assert_eq!(find_directory_free_30gb(&input), 24_933_642);
     }
 
 }

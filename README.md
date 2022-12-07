@@ -28,3 +28,7 @@ After finishing day 6, I did a small cleanup of this solution starting by using 
 ### Day 6 
 
 Today the problem seemed pretty straightforward, but I ended up stumbling with a funny issue. Since I started using `u8` as my marker position, when running with the input it started failing, since Rust was wrapping around. I learned my lesson and will use `u64` from now on. 
+
+### Day 7 
+
+Things started getting interesting (it was a bit sad not having this problem yesterday when I had more time). I had a relatively clear idea of how to implement this from the beginning, but today it started with a bit of a fight against the *borrow checker*. I tested the `trees` crate but I ended up using `slab_tree` since it had a nicer API for what I needed. 
