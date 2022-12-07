@@ -15,89 +15,89 @@ struct DirEntry {
 }
 
 impl DirEntry {
-    fn new(name: &str, size: u64) -> DirEntry {
+    fn directory(name: &str) -> DirEntry {
+        DirEntry { name: name.to_owned(), file_size: 0 }        
+    }
+
+    fn file(name: &str, size: u64) -> DirEntry {
         DirEntry { name: name.to_owned(), file_size: size }        
+    }
+
+    fn is_dir(&self) -> bool {
+        self.file_size == 0
     }
 }
 
 fn parse_commands(input: &Vec<String>) -> Tree<DirEntry> {
-    let mut root = TreeBuilder::new().with_root(DirEntry::new("/", 0)).build();
+    let mut root = TreeBuilder::new().with_root(DirEntry::directory("/")).build();
     let mut cwd = root.root().unwrap().node_id();
 
-    for command in input.into_iter().skip(1) {
-        if command.starts_with("$ cd ") {
-            let path = command.replace("$ cd ", "");
-            if path == ".." {
-                let cwd2 =root.get_mut(cwd).unwrap().parent().unwrap().node_id();
-                cwd = cwd2;
-            }
-            else {
-                for dir in root.get(cwd).unwrap().children() {
-                    if dir.data().name == path {
-                        let cwd2 = dir;
-                        cwd = cwd2.node_id();
+    for line in input.into_iter().skip(1) { // assume input starts with cd /
+        if line.starts_with("$") {
+            let parts : Vec<&str> = line.split(" ").collect();
+            let command = parts[1];
+            match command {
+                "cd" => { // change current working directory
+                    let arg = parts[2];
+                    if arg == ".." {
+                        let parent_id = root.get(cwd).unwrap().parent().unwrap().node_id();
+                        cwd = parent_id;
                     }
-                }
+                    else {
+                        let cwd_entry = root.get(cwd).unwrap();
+                        let child = cwd_entry.children().find(|c| c.data().name == arg).unwrap();
+                        cwd = child.node_id();
+                    }
+                },
+                "ls" => {},
+                _ => panic!("Unhandled command")
             }
-        }
-        else if command.starts_with("$ ls") {
+        } else if line.starts_with("dir") { 
+            let name = line.split(" ").nth(1).unwrap();
 
-        }
-        else if command.starts_with("dir") { // create a dir
-            let name = command.replace("dir ", "");
-
-            let mut d = root.get_mut(cwd).unwrap();
-            d.append(DirEntry::new(&name, 0));
-
+            let mut node = root.get_mut(cwd).unwrap();
+            node.append(DirEntry::directory(&name));
         }
         else { // file
-            let split : Vec<&str> = command.split(' ').collect();
-            let _size = split.iter().nth(0).unwrap().parse::<u64>().unwrap();
-            let _name = split.iter().nth(1).unwrap();
+            let split = line.split(" ").collect::<Vec<&str>>();
+            let file_size = split[0].parse::<u64>().unwrap();
+            let file_name = split[1];
 
-            let mut d = root.get_mut(cwd).unwrap();
-            d.append(DirEntry::new(&_name, _size));
+            let mut node = root.get_mut(cwd).unwrap();
+            node.append(DirEntry::file(file_name, file_size));
         }
     }
     root
 }
 
-fn sum_file_size(tree: &slab_tree::NodeRef<DirEntry>) -> u64 {
-    let mut sum = 0;
-    for entry in tree.children() {
-        let name : String = String::from(&entry.data().name);
-        let size = entry.data().file_size;
-        if size > 0 {
-            sum += size
-        }
-        else {
-            sum += sum_file_size(&entry);
-        }
-    }
-    sum
+fn sum_file_size(tree: &NodeRef<DirEntry>) -> u64 {
+    tree.traverse_pre_order().fold(0, |accum, node| accum + node.data().file_size)
 }
 
-fn sum_size(tree: slab_tree::NodeRef<DirEntry>) -> u64 {
-    let mut sum = tree.data().file_size;
-    for entry in tree.children() {
-        let name : String = String::from(&entry.data().name);
-        let size = entry.data().file_size;
-        if size == 0 { // dir
-            let files_size = sum_file_size(&entry);
-            if files_size < 100000 {
-                sum += files_size;
+fn sum_size_with_limit(tree: NodeRef<DirEntry>, limit: Option<u64>) -> u64 {
+    let size_limit = match limit {
+        Some(n) => n,
+        None => u64::MAX
+    };
+    tree.traverse_level_order().fold(0, |accum, node| {
+        if node.data().is_dir() {
+            let size = sum_file_size(&node);
+            if size < size_limit {
+                return accum + size;
             }
-        }
-    }
-    for entry in tree.children() {
-        if entry.data().file_size == 0 {
-            sum += sum_size(entry)
-        }
-    }
-    sum
+        } 
+        accum
+    })
 }
 
-fn smallest_bigger_than<'a>(root: &'a slab_tree::Tree<DirEntry>, tree: &'a slab_tree::NodeRef<'a, DirEntry>, _size: u64) -> Option<slab_tree::NodeRef<'a, DirEntry>> {
+#[aoc(day7, part1)]
+pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
+    let dir = parse_commands(input);
+    sum_size_with_limit(dir.root().unwrap(), Some(100_000))
+}
+
+
+fn smallest_bigger_than<'a>(root: &'a Tree<DirEntry>, tree: &'a NodeRef<'a, DirEntry>, _size: u64) -> Option<NodeRef<'a, DirEntry>> {
     let mut size = sum_file_size(&tree);
     let mut ret = tree.node_id();
 
@@ -113,7 +113,7 @@ fn smallest_bigger_than<'a>(root: &'a slab_tree::Tree<DirEntry>, tree: &'a slab_
 
     for entry in tree.children() {
         if entry.data().file_size == 0 {
-            if let Some(candidate) = smallest_bigger_than(root, &entry, size) {
+            if let Some(candidate) = smallest_bigger_than(root, &entry, _size) {
                 let entry_size = sum_file_size(&candidate);
                 if entry_size >= _size && entry_size < size {
                     size = entry_size;
@@ -127,13 +127,6 @@ fn smallest_bigger_than<'a>(root: &'a slab_tree::Tree<DirEntry>, tree: &'a slab_
         return root.get(ret);
     }
     None
-}
-
-#[aoc(day7, part1)]
-pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
-    const limit : u64 = 100000; // preparing for this to be a parameter
-    let dir = parse_commands(input);
-    sum_size(dir.root().unwrap())
 }
 
 #[aoc(day7, part2)]
