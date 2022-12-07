@@ -1,5 +1,6 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use slab_tree::NodeRef;
 use slab_tree::Tree;
 use slab_tree::TreeBuilder;
 
@@ -61,17 +62,16 @@ fn parse_commands(input: &Vec<String>) -> Tree<DirEntry> {
     root
 }
 
-fn sum_file_size(tree: slab_tree::NodeRef<DirEntry>) -> u64 {
+fn sum_file_size(tree: &slab_tree::NodeRef<DirEntry>) -> u64 {
     let mut sum = 0;
     for entry in tree.children() {
         let name : String = String::from(&entry.data().name);
         let size = entry.data().file_size;
         if size > 0 {
-            println!("file.add {} from folder {} {}", name, tree.data().name, size);
             sum += size
         }
         else {
-            sum += sum_file_size(entry);
+            sum += sum_file_size(&entry);
         }
     }
     sum
@@ -83,9 +83,8 @@ fn sum_size(tree: slab_tree::NodeRef<DirEntry>) -> u64 {
         let name : String = String::from(&entry.data().name);
         let size = entry.data().file_size;
         if size == 0 { // dir
-            let files_size = sum_file_size(entry);
+            let files_size = sum_file_size(&entry);
             if files_size < 100000 {
-                println!("dir.add folder {} {}", name, files_size);
                 sum += files_size;
             }
         }
@@ -98,11 +97,58 @@ fn sum_size(tree: slab_tree::NodeRef<DirEntry>) -> u64 {
     sum
 }
 
+fn smallest_bigger_than<'a>(root: &'a slab_tree::Tree<DirEntry>, tree: &'a slab_tree::NodeRef<'a, DirEntry>, _size: u64) -> Option<slab_tree::NodeRef<'a, DirEntry>> {
+    let mut size = sum_file_size(&tree);
+    let mut ret = tree.node_id();
+
+    for entry in tree.children() {
+        if entry.data().file_size == 0 {
+            let entry_size = sum_file_size(&entry);
+            if entry_size >= _size && entry_size < size {
+                size = entry_size;
+                ret = entry.node_id();
+            }
+        }
+    }
+
+    for entry in tree.children() {
+        if entry.data().file_size == 0 {
+            if let Some(candidate) = smallest_bigger_than(root, &entry, size) {
+                let entry_size = sum_file_size(&candidate);
+                if entry_size >= _size && entry_size < size {
+                    size = entry_size;
+                    ret = candidate.node_id();
+                }
+            }
+        }
+    }
+
+    if size >= _size {
+        return root.get(ret);
+    }
+    None
+}
+
 #[aoc(day7, part1)]
 pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
     const limit : u64 = 100000; // preparing for this to be a parameter
     let dir = parse_commands(input);
     sum_size(dir.root().unwrap())
+}
+
+#[aoc(day7, part2)]
+pub fn find_directory_free_30gb(input: &Vec<String>) -> u64 {
+    let dir = parse_commands(input);
+    let total = sum_file_size(&dir.root().unwrap());
+    let free = 70000000 - total;
+    let missing = 30000000 - free;
+    
+    let binding = dir.root().unwrap();
+    let candidate = smallest_bigger_than(&dir, &binding, missing);
+    if let Some(directory) = candidate {
+        return sum_file_size(&directory);
+    }
+    0
 }
 
 #[cfg(test)]
@@ -137,6 +183,12 @@ $ ls
     fn test_day7_example() {
         let input = parse_input(DAY07_EXAMPLE);
         assert_eq!(sum_directories_smaller_than_100k(&input), 95437);
+    }
+
+    #[test]
+    fn test_day7_example2() {
+        let input = parse_input(DAY07_EXAMPLE);
+        assert_eq!(find_directory_free_30gb(&input), 24933642);
     }
 
 }
