@@ -10,17 +10,23 @@ pub fn parse_input(input: &str) -> Vec<String> {
 }
 
 struct DirEntry {
-    name : String,
-    file_size : u64,
+    name: String,
+    file_size: u64,
 }
 
 impl DirEntry {
     fn directory(name: &str) -> DirEntry {
-        DirEntry { name: name.to_owned(), file_size: 0 }        
+        DirEntry {
+            name: name.to_owned(),
+            file_size: 0,
+        }
     }
 
     fn file(name: &str, size: u64) -> DirEntry {
-        DirEntry { name: name.to_owned(), file_size: size }        
+        DirEntry {
+            name: name.to_owned(),
+            file_size: size,
+        }
     }
 
     fn is_dir(&self) -> bool {
@@ -29,36 +35,39 @@ impl DirEntry {
 }
 
 fn parse_commands(input: &Vec<String>) -> Tree<DirEntry> {
-    let mut root = TreeBuilder::new().with_root(DirEntry::directory("/")).build();
+    let mut root = TreeBuilder::new()
+        .with_root(DirEntry::directory("/"))
+        .build();
     let mut cwd = root.root().unwrap().node_id();
 
-    for line in input.into_iter().skip(1) { // assume input starts with cd /
+    for line in input.into_iter().skip(1) {
+        // assume input starts with cd /
         if line.starts_with("$") {
-            let parts : Vec<&str> = line.split(" ").collect();
+            let parts: Vec<&str> = line.split(" ").collect();
             let command = parts[1];
             match command {
-                "cd" => { // change current working directory
+                "cd" => {
+                    // change current working directory
                     let arg = parts[2];
                     if arg == ".." {
                         let parent_id = root.get(cwd).unwrap().parent().unwrap().node_id();
                         cwd = parent_id;
-                    }
-                    else {
+                    } else {
                         let cwd_entry = root.get(cwd).unwrap();
                         let child = cwd_entry.children().find(|c| c.data().name == arg).unwrap();
                         cwd = child.node_id();
                     }
-                },
-                "ls" => {},
-                _ => panic!("Unhandled command")
+                }
+                "ls" => {}
+                _ => panic!("Unhandled command"),
             }
-        } else if line.starts_with("dir") { 
+        } else if line.starts_with("dir") {
             let name = line.split(" ").nth(1).unwrap();
 
             let mut node = root.get_mut(cwd).unwrap();
             node.append(DirEntry::directory(&name));
-        }
-        else { // file
+        } else {
+            // file
             let split = line.split(" ").collect::<Vec<&str>>();
             let file_size = split[0].parse::<u64>().unwrap();
             let file_name = split[1];
@@ -71,13 +80,14 @@ fn parse_commands(input: &Vec<String>) -> Tree<DirEntry> {
 }
 
 fn sum_file_size(tree: &NodeRef<DirEntry>) -> u64 {
-    tree.traverse_pre_order().fold(0, |accum, node| accum + node.data().file_size)
+    tree.traverse_pre_order()
+        .fold(0, |accum, node| accum + node.data().file_size)
 }
 
 fn sum_size_with_limit(tree: NodeRef<DirEntry>, limit: Option<u64>) -> u64 {
     let size_limit = match limit {
         Some(n) => n,
-        None => u64::MAX
+        None => u64::MAX,
     };
     tree.traverse_level_order().fold(0, |accum, node| {
         if node.data().is_dir() {
@@ -85,7 +95,7 @@ fn sum_size_with_limit(tree: NodeRef<DirEntry>, limit: Option<u64>) -> u64 {
             if size < size_limit {
                 return accum + size;
             }
-        } 
+        }
         accum
     })
 }
@@ -96,7 +106,6 @@ pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
     sum_size_with_limit(dir.root().unwrap(), Some(100_000))
 }
 
-
 fn smallest_bigger_than(tree: &NodeRef<DirEntry>, minimum_size: u64) -> Option<u64> {
     let mut best_size = u64::MAX;
 
@@ -106,11 +115,11 @@ fn smallest_bigger_than(tree: &NodeRef<DirEntry>, minimum_size: u64) -> Option<u
             if size >= minimum_size && size < best_size {
                 best_size = size;
             }
-        } 
+        }
     });
 
     if best_size != u64::MAX {
-        return Some(best_size)
+        return Some(best_size);
     }
 
     None
@@ -122,7 +131,7 @@ pub fn find_directory_free_30gb(input: &Vec<String>) -> u64 {
     let total = sum_file_size(&dir.root().unwrap());
     let free = 70_000_000 - total;
     let missing = 30_000_000 - free;
-    
+
     smallest_bigger_than(&dir.root().unwrap(), missing).unwrap()
 }
 
@@ -130,7 +139,7 @@ pub fn find_directory_free_30gb(input: &Vec<String>) -> u64 {
 mod tests {
     use super::*;
 
-    const DAY07_EXAMPLE : &str = "$ cd /
+    const DAY07_EXAMPLE: &str = "$ cd /
 $ ls
 dir a
 14848514 b.txt
@@ -165,5 +174,4 @@ $ ls
         let input = parse_input(DAY07_EXAMPLE);
         assert_eq!(find_directory_free_30gb(&input), 24_933_642);
     }
-
 }
