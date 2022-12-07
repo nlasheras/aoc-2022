@@ -31,4 +31,4 @@ Today the problem seemed pretty straightforward, but I ended up stumbling with a
 
 ### Day 7 
 
-Things started getting interesting (it was a bit sad not having this problem yesterday when I had more time). I had a relatively clear idea of how to implement this from the beginning, but today it started with a bit of a fight against the *borrow checker*. I tested the `trees` crate but I ended up using `slab_tree` since it had a nicer API for what I needed. 
+Things started getting interesting (it was a bit sad not having this problem yesterday when I had more time). I had a relatively clear idea of how to implement this from the beginning, but today it started with a bit of a fight against the *borrow checker*. I tested the `trees` crate but I ended up using `slab_tree` since it had a nicer API for what I needed. For the second part I wanted to have the function return an `Option` with the node and I ended up having to figure out the proper way of anotating the lifetimes, in the end I just return the size because the code looks cleaner but it has been a good learning experience.
