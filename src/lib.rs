@@ -8,4 +8,8 @@ pub mod day05;
 pub mod day06;
 pub mod day07;
 
+mod utils;
+
+pub mod day08;
+
 aoc_lib! { year = 2022 }
