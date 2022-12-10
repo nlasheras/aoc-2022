@@ -32,3 +32,15 @@ Today the problem seemed pretty straightforward, but I ended up stumbling with a
 ### Day 7 
 
 Things started getting interesting (it was a bit sad not having this problem yesterday when I had more time). I had a relatively clear idea of how to implement this from the beginning, but today it started with a bit of a fight against the *borrow checker*. I tested the `trees` crate but I ended up using `slab_tree` since it had a nicer API for what I needed. For the second part I wanted to have the function return an `Option` with the node and I ended up having to figure out the proper way of anotating the lifetimes, in the end I just return the size because the code looks cleaner but it has been a good learning experience.
+
+### Day 8
+
+For today I wanted a Grid so I used Belen's `utils.rs` class as a starting point. I didn't touch more the solution until I had some extra time to clean Days 8-10. I wanted to use the succint way of iterating on the grid I used last year with Python `product` so for this I used the macro `itertools::iproduct!`. 
+
+### Day 9
+
+Day 9 was the day I was feeling quite sick. I just implemented a really straightforward solution and didn't bother cleaning it up afterwards. I switched from char to `String` for stuff like the motion direction since `char32_t` show a little less nice in the debugger. I considered for a bit making the `follow_head` function get the tail as a mutable reference, but I switched to returning the new position as an `Option` since my code is advancing the knots step by step.
+
+### Day 10
+
+Looking at the example, I thought that maybe I should simulate the machine, but I realized that the approach suggested in the problem (adding up all the *addx* instructions) was probably much easier to implement. Then for part 2, since the 40x6 CRT is small enough I can just use my function to calculate the x values in each cycle and then use that to render the screen. When cleaning the solution I spotted a quite obvious way of speeding the code when the cycles that you request are in order, and that adds up in the CRT render. 

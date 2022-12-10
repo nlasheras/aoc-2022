@@ -1,73 +1,92 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 
+pub enum Instruction {
+    Noop,
+    Add(i64),
+}
+
 #[aoc_generator(day10)]
-pub fn parse_input(input: &str) -> Vec<(String, i64, i64)> {
+pub fn parse_input(input: &str) -> Vec<Instruction> {
     input
         .lines()
         .map(|s| {
-            let parts : Vec<&str> = s.split(" ").collect();
-            if parts[0] == "noop" {
-                return ("noop".to_string(), 0, 1)
-            }
-            (String::from(parts[0]), parts[1].parse::<i64>().unwrap(), 2)
+            let parts: Vec<&str> = s.split(" ").collect();
+            return match parts[0] {
+                "noop" => Instruction::Noop,
+                "addx" => Instruction::Add(parts[1].parse::<i64>().unwrap()),
+                _ => panic!("Wrong input"),
+            };
         })
         .collect()
 }
 
-fn get_x_value(instructions: &Vec<(String, i64, i64)>, interesting: &Vec<i64>) -> Vec<i64> {
-    let mut ret = Vec::new();
-    for cycle in interesting {
-        let mut sum = 1;
-        for i in 0..instructions.len() {
-            let instruction_cycles = instructions[i].2;
-            if sum + instruction_cycles > *cycle {
+fn cycles_for_instruction(instruction: &Instruction) -> usize {
+    match *instruction {
+        Instruction::Noop => 1,
+        Instruction::Add(_) => 2,
+    }
+}
 
-                let mut x = 1;
-                for j in 0..i {
-                    x += instructions[j].1;
-                }
+fn get_x_values(instructions: &Vec<Instruction>, interesting: &Vec<usize>) -> Vec<i64> {
+    let mut ret = Vec::new();
+    assert!(interesting.windows(2).all(|w| w[0] < w[1])); // if the cycles are sorted, we can reuse some calculations
+    let mut start_instruction = 0;
+    let mut cycle_counter = 1;
+    let mut x = 1;
+    for cycle in interesting {
+        for i in start_instruction..instructions.len() {
+            let instruction_cycles = cycles_for_instruction(&instructions[i]);
+            if cycle_counter + instruction_cycles > *cycle {
+                x += instructions[start_instruction..i]
+                    .iter()
+                    .fold(0, |x, instruction| match instruction {
+                        Instruction::Add(n) => return x + n,
+                        Instruction::Noop => return x,
+                    });
 
                 ret.push(x);
+                start_instruction = i;
+
                 break;
             }
-            sum += instruction_cycles;
+            cycle_counter += instruction_cycles;
         }
     }
     ret
 }
 
 #[aoc(day10, part1)]
-fn sum_six_signal_strengths(instructions: &Vec<(String, i64, i64)>) -> i64 {
+fn sum_six_signal_strengths(instructions: &Vec<Instruction>) -> i64 {
     let interesting = vec![20, 60, 100, 140, 180, 220];
-    let xs = get_x_value(instructions, &interesting);
-    let mut sum = 0;
-    for i in 0..interesting.len() {
-        sum += xs[i] * interesting[i];
-    }
-    sum
+    let xs = get_x_values(instructions, &interesting);
+    interesting
+        .into_iter()
+        .zip(xs.into_iter())
+        .map(|pair| pair.0 as i64 * pair.1)
+        .sum::<i64>()
 }
 
 #[aoc(day10, part2)]
-fn render_crt(instructions: &Vec<(String, i64, i64)>) -> String {
-    let xs = get_x_value(instructions, &(0..=240).collect::<Vec<i64>>());
-    let mut ret = String::from("");
+fn render_crt(instructions: &Vec<Instruction>) -> String {
+    let xs = get_x_values(instructions, &(1..=240).collect::<Vec<usize>>());
+    let mut buffer = "".to_string();
     for i in 1..=240 {
-        let x = xs[i];
+        let x = xs[i-1];
         let col = ((i - 1) % 40) as i64;
-        if (x - col).abs() <= 1 {
-            ret.push('#');
-        }
-        else {
-            ret.push('.');
-        }
-        
-        if i % 40 == 0 && i != 240 { ret.push('\n') };
-    }
-    println!("{}", ret);
-    ret
-}
 
+        if (x - col).abs() <= 1 {
+            buffer.push('#');
+        } else {
+            buffer.push('.');
+        }
+
+        if col == 39 && i != 240 { //add newlines after column 40, 80 
+            buffer.push('\n')
+        };
+    }
+    buffer
+}
 
 #[cfg(test)]
 mod tests {
@@ -226,7 +245,7 @@ noop";
         assert_eq!(sum_six_signal_strengths(&input), 13140);
     }
 
-    const DAY10_PART2_OUTPUT : &str = "##..##..##..##..##..##..##..##..##..##..
+    const DAY10_PART2_OUTPUT: &str = "##..##..##..##..##..##..##..##..##..##..
 ###...###...###...###...###...###...###.
 ####....####....####....####....####....
 #####.....#####.....#####.....#####.....
@@ -237,9 +256,6 @@ noop";
     fn test_day10_part2() {
         let input = parse_input(DAY10_EXAMPLE);
         let output = render_crt(&input);
-        assert_eq!(output.as_str(), DAY10_PART2_OUTPUT); 
+        assert_eq!(output.as_str(), DAY10_PART2_OUTPUT);
     }
-
-
-
 }
