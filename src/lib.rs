@@ -12,5 +12,6 @@ mod utils;
 
 pub mod day08;
 pub mod day09;
+pub mod day10;
 
 aoc_lib! { year = 2022 }
