@@ -1,5 +1,6 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use itertools::iproduct;
 use std::cmp;
 
 use crate::utils::Grid;
@@ -34,58 +35,48 @@ fn get_visible_trees(grid: &Grid<u64>, pos: (usize, usize), dir: (i32, i32)) -> 
 
 fn is_visible_direction(grid: &Grid<u64>, pos: (usize, usize), dir: (i32, i32)) -> bool {
     let height = grid.cell_at(pos.0 as i32, pos.1 as i32).unwrap();
-    get_visible_trees(grid, pos, dir).into_iter().filter(|t| *t >= height).count() == 0
+    get_visible_trees(grid, pos, dir)
+        .into_iter()
+        .filter(|t| *t >= height)
+        .count()
+        == 0
 }
 
 fn is_visible(grid: &Grid<u64>, pos: (usize, usize)) -> bool {
-    is_visible_direction(grid, pos, (0, -1))
-        || is_visible_direction(grid, pos, (0, 1))
-        || is_visible_direction(grid, pos, (-1, 0))
-        || is_visible_direction(grid, pos, (1, 0))
+    [(0, -1), (0, 1), (-1, 0), (1, 0)]
+        .into_iter()
+        .any(|dir| is_visible_direction(grid, pos, dir))
 }
 
 #[aoc(day8, part1)]
 pub fn count_visible(grid: &Grid<u64>) -> u64 {
     let (width, height) = grid.size();
-    let mut sum = 0;
-    for y in 0..height {
-        for x in 0..width {
-            if is_visible(grid, (x, y)) {
-                sum += 1
-            }
-        }
-    }
-    sum
+    iproduct!(0..width, 0..height)
+        .filter(|pos| is_visible(grid, *pos))
+        .count() as u64
 }
 
 fn get_viewing_distance(grid: &Grid<u64>, pos: (usize, usize), dir: (i32, i32)) -> u64 {
     let height = grid.cell_at(pos.0 as i32, pos.1 as i32).unwrap();
     let trees = get_visible_trees(grid, pos, dir);
     if let Some(position) = trees.iter().position(|t| *t >= height) {
-        return (position + 1) as u64
+        return (position + 1) as u64;
     }
     trees.len() as u64
 }
 
 fn get_scenic_score(grid: &Grid<u64>, pos: (usize, usize)) -> u64 {
-    get_viewing_distance(grid, pos, (0, -1))
-        * get_viewing_distance(grid, pos, (0, 1))
-        * get_viewing_distance(grid, pos, (-1, 0))
-        * get_viewing_distance(grid, pos, (1, 0))
+    [(0, -1), (0, 1), (-1, 0), (1, 0)]
+        .into_iter()
+        .map(|dir| get_viewing_distance(grid, pos, dir))
+        .product()
 }
 
 #[aoc(day8, part2)]
 pub fn find_highest_scenic(grid: &Grid<u64>) -> u64 {
-    let mut max = 0;
     let (width, height) = grid.size();
-    for y in 0..height {
-        for x in 0..width {
-            max = cmp::max(max, get_scenic_score(grid, (x, y)))
-        }
-    }
-    max
+    iproduct!(0..width, 0..height).fold(0, |max, pos| cmp::max(max, get_scenic_score(grid, pos)))
 }
-
 
 #[cfg(test)]
 mod tests {
