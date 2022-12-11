@@ -44,3 +44,7 @@ Day 9 was the day I was feeling quite sick. I just implemented a really straight
 ### Day 10
 
 Looking at the example, I thought that maybe I should simulate the machine, but I realized that the approach suggested in the problem (adding up all the *addx* instructions) was probably much easier to implement. Then for part 2, since the 40x6 CRT is small enough I can just use my function to calculate the x values in each cycle and then use that to render the screen. When cleaning the solution I spotted a quite obvious way of speeding the code when the cycles that you request are in order, and that adds up in the CRT render. 
+
+### Day 11
+
+Today the parsing of the input was quite verbose but I got it relatively fast. For my first implementation I used the `eval` crate to avoid having to parse the *Operation* lines. I still had to figure out the trick to get the code able to run for 10k rounds. Even using the eval in each operation, the execution was around a second, but since it was quite impactful I refactored to have my own simple `Operation` enum that I can eval without having to parse each time. One of the small Rust challenges today was to access to two `Monkey`s at the same time. I had to fiddle a bit with my code to write something that the borrow checker would like. 
