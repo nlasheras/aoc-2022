@@ -21,8 +21,13 @@ fn fix_start_end(a: char) -> char {
         _ => a
     }
 }
+
 fn diff_height(current: char, other: char) -> i32 {
     (fix_start_end(other) as i32) - (fix_start_end(current) as i32)
+}
+
+fn h_func(pos: (i32, i32), goal: (i32, i32)) -> u64 {
+    (goal.0 - pos.0).abs() as u64 + (goal.1 - pos.1).abs() as u64
 }
 
 fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Vec<(i32, i32)>>  {
@@ -33,8 +38,11 @@ fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Ve
     let mut came_from = BTreeMap::new();
 
     let inf = u64::MAX;
-    let mut dists = BTreeMap::new();
-    dists.insert(start, 0u64);
+    let mut g_score = BTreeMap::new();
+    g_score.insert(start, 0u64);
+
+    let mut f_score = BTreeMap::new();
+    f_score.insert(start, h_func(start, end));
 
     while !open_set.is_empty() {
         // get the element with smallest fScore
@@ -57,30 +65,33 @@ fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Ve
         closed_set.insert(current);
 
         let current_height = grid.cell_at(current.0, current.1).unwrap();
-        for (candidate_height, cell_pos) in grid.neighbors_at(current.0, current.1) {
+        for (height, cell_pos) in grid.neighbors_at(current.0, current.1) {
             let candidate = (cell_pos.0 as i32, cell_pos.1 as i32);
             if closed_set.contains(&candidate) {
                 continue;
             }
-            
+
             // apply constraint of either going up at most one (or downhill)
-            if diff_height(current_height, candidate_height) > 1 {
+            if diff_height(current_height, height) > 1 {
                 continue;
             }
-            
-            let dist_u = dists.entry(current).or_insert(inf).to_owned() + 1;
 
-            let dist_v = dists.entry(candidate).or_insert(inf).to_owned();
-            if dist_u < dist_v {
-                *came_from.entry(candidate).or_insert(current) = current;
+            let g_func = 1; 
+            let tentative_g_score = g_score.entry(current).or_insert(inf).to_owned() + g_func;
 
-                dists.entry(candidate).and_modify(|e| { *e = dist_u }).or_insert(dist_u);
-               
-                open_set.push(candidate, _priority + 1 );
+            let neighbor_score = g_score.entry(candidate).or_insert(inf).to_owned();
+            if tentative_g_score < neighbor_score {
+                *came_from.entry(candidate).or_insert(current) = current.clone();
+
+                g_score.entry(candidate).and_modify(|e| *e = tentative_g_score).or_insert(tentative_g_score);
+
+                let score = tentative_g_score + h_func(candidate, end);
+                f_score.entry(candidate).and_modify(|e| *e = score).or_insert(score);
+
+                open_set.push(candidate, score);
             }
         }
     }
-
     None
 }
 
