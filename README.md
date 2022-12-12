@@ -48,3 +48,7 @@ Looking at the example, I thought that maybe I should simulate the machine, but 
 ### Day 11
 
 Today the parsing of the input was quite verbose but I got it relatively fast. For my first implementation I used the `eval` crate to avoid having to parse the *Operation* lines. I still had to figure out the trick to get the code able to run for 10k rounds. Even using the eval in each operation, the execution was around a second, but since it was quite impactful I refactored to have my own simple `Operation` enum that I can eval without having to parse each time. One of the small Rust challenges today was to access to two `Monkey`s at the same time. I had to fiddle a bit with my code to write something that the borrow checker would like. 
+
+### Day 12
+
+Today should have been much easier, but stumbled against the problem a long while until I realized that the `PriorityQueue` was not getting me the elements (it was returning them from higher value of priority to lower). 
