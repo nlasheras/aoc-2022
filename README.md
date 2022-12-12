@@ -51,4 +51,4 @@ Today the parsing of the input was quite verbose but I got it relatively fast. F
 
 ### Day 12
 
-Today should have been much easier, but stumbled against the problem a long while until I realized that the `PriorityQueue` was not getting me the elements (it was returning them from higher value of priority to lower). 
+Today should have been much easier, but stumbled against the problem a long while until I realized that the `PriorityQueue` was not getting me the elements (it was returning them from higher value of priority to lower). For the second part a brute force A* is able to get the solution in under a second. 

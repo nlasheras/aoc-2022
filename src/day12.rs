@@ -1,14 +1,17 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use priority_queue::DoublePriorityQueue;
-use std::collections::BTreeSet;
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 
 use crate::utils::Grid;
 
 #[aoc_generator(day12)]
 pub fn parse_input(input: &str) -> Grid<char> {
-    let chars = input.lines().map(|s| s.chars().collect::<Vec<char>>()).collect::<Vec<Vec<char>>>();
+    let chars = input
+        .lines()
+        .map(|s| s.chars().collect::<Vec<char>>())
+        .collect::<Vec<Vec<char>>>();
     let width = chars.first().unwrap().len();
     let cells = chars.into_iter().flatten().collect::<Vec<char>>();
     Grid::new(&cells, width)
@@ -18,7 +21,7 @@ fn fix_start_end(a: char) -> char {
     match a {
         'S' => 'a',
         'E' => 'z',
-        _ => a
+        _ => a,
     }
 }
 
@@ -30,7 +33,7 @@ fn h_func(pos: (i32, i32), goal: (i32, i32)) -> u64 {
     (goal.0 - pos.0).abs() as u64 + (goal.1 - pos.1).abs() as u64
 }
 
-fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Vec<(i32, i32)>>  {
+fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Vec<(i32, i32)>> {
     let mut open_set = DoublePriorityQueue::new();
     open_set.push(start, 0);
 
@@ -59,8 +62,8 @@ fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Ve
                 path.push(path_node);
             }
             path.reverse();
-            return Some(path)
-        } 
+            return Some(path);
+        }
 
         closed_set.insert(current);
 
@@ -76,17 +79,23 @@ fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Ve
                 continue;
             }
 
-            let g_func = 1; 
+            let g_func = 1;
             let tentative_g_score = g_score.entry(current).or_insert(inf).to_owned() + g_func;
 
             let neighbor_score = g_score.entry(candidate).or_insert(inf).to_owned();
             if tentative_g_score < neighbor_score {
                 *came_from.entry(candidate).or_insert(current) = current.clone();
 
-                g_score.entry(candidate).and_modify(|e| *e = tentative_g_score).or_insert(tentative_g_score);
+                g_score
+                    .entry(candidate)
+                    .and_modify(|e| *e = tentative_g_score)
+                    .or_insert(tentative_g_score);
 
                 let score = tentative_g_score + h_func(candidate, end);
-                f_score.entry(candidate).and_modify(|e| *e = score).or_insert(score);
+                f_score
+                    .entry(candidate)
+                    .and_modify(|e| *e = score)
+                    .or_insert(score);
 
                 open_set.push(candidate, score);
             }
@@ -106,7 +115,7 @@ fn find_shortest_path_len(input: &Grid<char>) -> u64 {
     let start = find_cell('S', input);
     let end = find_cell('E', input);
     if let Some(path) = find_path(input, start, end) {
-        return (path.len() - 1) as u64
+        return (path.len() - 1) as u64;
     }
     0
 }
@@ -121,13 +130,13 @@ fn find_shortest_path_any_a(input: &Grid<char>) -> u64 {
             if input.cell_at(x, y).unwrap() != 'a' && input.cell_at(x, y).unwrap() != 'S' {
                 continue;
             }
-        if let Some(path) = find_path(input, (x as i32, y as i32), end) {
-            let steps = (path.len() - 1) as u64;
-            if steps < min_dist {
-                min_dist = steps
+            if let Some(path) = find_path(input, (x as i32, y as i32), end) {
+                let steps = (path.len() - 1) as u64;
+                if steps < min_dist {
+                    min_dist = steps
+                }
             }
         }
-    }
     }
     min_dist as u64
 }
