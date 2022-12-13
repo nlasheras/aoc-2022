@@ -1,7 +1,7 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
-use std::fmt;
 use std::cmp;
+use std::fmt;
 
 #[derive(Clone, PartialEq)]
 pub enum PacketData {
@@ -34,7 +34,7 @@ impl PacketData {
         if input.starts_with('[') {
             // List
             let mut values = Vec::new();
-            let input = input.strip_prefix('[').unwrap().strip_suffix(']').unwrap();
+            let input = &input[1..input.len()-1];
             let mut start = 0;
             let mut level = 0;
             for (index, c) in input.char_indices() {
@@ -44,10 +44,10 @@ impl PacketData {
                     ',' => {
                         if level == 0 {
                             values.push(Self::from(&input[start..index]));
-                            start = index+1;
+                            start = index + 1;
                         }
                     }
-                    _ => ()
+                    _ => (),
                 }
             }
             if start < input.len() {
@@ -59,28 +59,29 @@ impl PacketData {
             PacketData::Integer(input.parse().unwrap())
         }
     }
-    
+
     fn as_list(&self) -> PacketData {
         if let PacketData::Integer(_) = self {
             return PacketData::List(vec![self.clone()]);
         }
         self.clone()
     }
-
 }
 
 impl PartialOrd for PacketData {
     fn partial_cmp(&self, other: &PacketData) -> Option<cmp::Ordering> {
         match (self, other) {
-            (PacketData::Integer(_), PacketData::List(_)) => return Self::partial_cmp(&self.as_list(), other),
-            (PacketData::List(_), PacketData::Integer(_)) => return Self::partial_cmp(self, &other.as_list()),
-            _=> ()
+            (PacketData::Integer(_), PacketData::List(_)) => {
+                return Self::partial_cmp(&self.as_list(), other)
+            }
+            (PacketData::List(_), PacketData::Integer(_)) => {
+                return Self::partial_cmp(self, &other.as_list())
+            }
+            _ => (),
         }
 
         match (self, other) {
-            (PacketData::Integer(n), PacketData::Integer(m)) => {
-                n.partial_cmp(m)
-            },
+            (PacketData::Integer(n), PacketData::Integer(m)) => n.partial_cmp(m),
             (PacketData::List(left_list), PacketData::List(right_list)) => {
                 for (left, right) in left_list.iter().zip(right_list.iter()) {
                     if let Some(comparison) = left.partial_cmp(right) {
@@ -99,8 +100,8 @@ impl PartialOrd for PacketData {
                     return Some(cmp::Ordering::Greater);
                 }
                 Some(cmp::Ordering::Equal)
-            },
-            _ => panic!("Shouldn't happen")
+            }
+            _ => panic!("Shouldn't happen"),
         }
     }
 }
@@ -121,37 +122,38 @@ pub fn parse_input(input: &str) -> Vec<(PacketData, PacketData)> {
 
 #[aoc(day13, part1)]
 fn sum_packets_in_order(input: &Vec<(PacketData, PacketData)>) -> u64 {
-    let are_right_order = input.iter().map(|pair| {
-      if pair.0.partial_cmp(&pair.1).unwrap() == cmp::Ordering::Less {
-        return 1;
-      }
-      0
-    }).collect::<Vec<i32>>();
-        
-
-    let mut sum = 0;
-    for i in 0..are_right_order.len() {
-        sum += (i+1) as i32*are_right_order.iter().nth(i).unwrap();
-    }
-    sum as u64
+    input
+        .iter()
+        .map(|pair| pair.0.partial_cmp(&pair.1))
+        .into_iter()
+        .enumerate()
+        .map(|(i, ordering)| match ordering {
+            Some(cmp::Ordering::Less) => i + 1,
+            _ => 0,
+        })
+        .sum::<usize>() as u64
 }
 
 #[aoc(day13, part2)]
 fn locate_decoder_key(input: &Vec<(PacketData, PacketData)>) -> u64 {
-    let mut input_packets = input.iter().map(|p| vec![p.0.clone(), p.1.clone()]).into_iter().flatten().collect::<Vec<PacketData>>();
-    let divider1=  PacketData::from("[[2]]");
+    let mut input_packets = input
+        .iter()
+        .map(|p| vec![p.0.clone(), p.1.clone()])
+        .into_iter()
+        .flatten()
+        .collect::<Vec<PacketData>>();
+    let divider1 = PacketData::from("[[2]]");
     let divider2 = PacketData::from("[[6]]");
     input_packets.push(divider1.clone());
     input_packets.push(divider2.clone());
 
     input_packets.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let idx1 = input_packets.iter().position(|p| p.partial_cmp(&divider1).unwrap() == cmp::Ordering::Equal).unwrap() + 1;
-    let idx2 = input_packets.iter().position(|p| p.partial_cmp(&divider2).unwrap() == cmp::Ordering::Equal).unwrap() + 1;
+    let idx1 = input_packets.iter().position(|p| *p == divider1).unwrap() + 1;
+    let idx2 = input_packets.iter().position(|p| *p == divider2).unwrap() + 1;
 
     (idx1 * idx2) as u64
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -180,7 +182,7 @@ mod tests {
 
 [1,[2,[3,[4,[5,6,7]]]],8,9]
 [1,[2,[3,[4,[5,6,0]]]],8,9]";
-    
+
     #[test]
     fn test_day13_pair2() {
         let a = PacketData::from("[[1],[2,3,4]]");
