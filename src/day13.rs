@@ -65,13 +65,13 @@ impl PacketData {
     }
 
     fn compare(&self, other: &PacketData) -> Option<bool> {
-        let (left, right) = match (self, other) {
-            (PacketData::Integer(_), PacketData::List(_)) => (Self::to_list(self), other.clone()),
-            (PacketData::List(_), PacketData::Integer(_)) => (self.clone(), Self::to_list(other)),
-            _=> (self.clone(), other.clone()),
-            };
+        match (self, other) {
+            (PacketData::Integer(_), PacketData::List(_)) => return Self::compare(&Self::to_list(self), other),
+            (PacketData::List(_), PacketData::Integer(_)) => return Self::compare(self, &Self::to_list(other)),
+            _=> ()
+        }
 
-        match (left, right) {
+        match (self, other) {
             (PacketData::Integer(n), PacketData::Integer(m)) => {
                 if n < m { 
                     return Some(true);
