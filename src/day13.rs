@@ -1,6 +1,5 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
-
 use std::fmt;
 use std::cmp;
 
@@ -10,8 +9,7 @@ pub enum PacketData {
     List(Vec<PacketData>),
 }
 
-
-impl std::fmt::Debug for PacketData {
+impl std::fmt::Display for PacketData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buffer = "".to_string();
         match self {
@@ -22,7 +20,7 @@ impl std::fmt::Debug for PacketData {
                     if buffer.len() > 1 {
                         buffer.push_str(",");
                     }
-                    buffer.push_str(&format!("{:?}", packet));
+                    buffer.push_str(&format!("{}", packet));
                 }
                 buffer.push_str("]");
             }
@@ -34,37 +32,30 @@ impl std::fmt::Debug for PacketData {
 impl PacketData {
     fn from(input: &str) -> PacketData {
         if input.starts_with('[') {
-            // list
+            // List
             let mut values = Vec::new();
             let input = input.strip_prefix('[').unwrap().strip_suffix(']').unwrap();
-            let mut buf = String::new();
+            let mut start = 0;
             let mut level = 0;
-            for c in input.chars() {
+            for (index, c) in input.char_indices() {
                 match c {
-                    '[' => {
-                        level += 1;
-                        buf.push('[')
-                    }
-                    ']' => {
-                        level -= 1;
-                        buf.push(']')
-                    }
+                    '[' => level += 1,
+                    ']' => level -= 1,
                     ',' => {
                         if level == 0 {
-                            values.push(PacketData::from(&buf));
-                            buf.clear();
-                        } else {
-                            buf.push(',');
+                            values.push(Self::from(&input[start..index]));
+                            start = index+1;
                         }
                     }
-                    c => buf.push(c),
+                    _ => ()
                 }
             }
-            if !buf.is_empty() {
-                values.push(PacketData::from(&buf));
+            if start < input.len() {
+                values.push(Self::from(&input[start..input.len()]));
             }
             PacketData::List(values)
         } else {
+            // Integer
             PacketData::Integer(input.parse().unwrap())
         }
     }
@@ -205,6 +196,8 @@ mod tests {
     fn test_day13_pair2() {
         let a = PacketData::from("[[1],[2,3,4]]");
         let b = PacketData::from("[[1],4]");
+        println!("a = {}", a);
+        println!("b = {}", b);
         assert!(a.compare(&b).unwrap());
     }
 
