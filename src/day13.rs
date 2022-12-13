@@ -3,7 +3,7 @@ use aoc_runner_derive::aoc_generator;
 use std::fmt;
 use std::cmp;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum PacketData {
     Integer(i64),
     List(Vec<PacketData>),
@@ -59,52 +59,46 @@ impl PacketData {
             PacketData::Integer(input.parse().unwrap())
         }
     }
-
-    fn to_list(integer: &PacketData) -> PacketData {
-        PacketData::List(vec![integer.clone()])
+    
+    fn as_list(&self) -> PacketData {
+        if let PacketData::Integer(_) = self {
+            return PacketData::List(vec![self.clone()]);
+        }
+        self.clone()
     }
 
-    fn compare(&self, other: &PacketData) -> Option<bool> {
+}
+
+impl PartialOrd for PacketData {
+    fn partial_cmp(&self, other: &PacketData) -> Option<cmp::Ordering> {
         match (self, other) {
-            (PacketData::Integer(_), PacketData::List(_)) => return Self::compare(&Self::to_list(self), other),
-            (PacketData::List(_), PacketData::Integer(_)) => return Self::compare(self, &Self::to_list(other)),
+            (PacketData::Integer(_), PacketData::List(_)) => return Self::partial_cmp(&self.as_list(), other),
+            (PacketData::List(_), PacketData::Integer(_)) => return Self::partial_cmp(self, &other.as_list()),
             _=> ()
         }
 
         match (self, other) {
             (PacketData::Integer(n), PacketData::Integer(m)) => {
-                if n < m { 
-                    return Some(true);
-                }
-                else if n > m {
-                    return Some(false);
-                }
-                None
+                n.partial_cmp(m)
             },
             (PacketData::List(left_list), PacketData::List(right_list)) => {
-                for i in 0..cmp::max(left_list.len(), right_list.len()) {
-                    let elem_l = left_list.iter().nth(i);
-                    let elem_r = right_list.iter().nth(i);
-                    if let Some(left) = elem_l {
-                        if let Some(right) = elem_r {
-                            if let Some(comparison) = left.compare(right) {
-                                if comparison == true {
-                                    return Some(true);
-                                }
-                                else if comparison == false {
-                                    return Some(false);
-                                }
-                            }
-                        } else { 
-                            // right list ran out of items
-                            return Some(false);
+                for (left, right) in left_list.iter().zip(right_list.iter()) {
+                    if let Some(comparison) = left.partial_cmp(right) {
+                        if comparison == cmp::Ordering::Equal {
+                            continue;
                         }
-                    } else if let Some(_) = elem_r {
-                        // left list ran out of items
-                        return Some(true);
+                        return Some(comparison);
                     }
                 }
-                None
+                if right_list.len() > left_list.len() {
+                    // left list ran out of items
+                    return Some(cmp::Ordering::Less);
+                }
+                if left_list.len() > right_list.len() {
+                    // right list ran out of items
+                    return Some(cmp::Ordering::Greater);
+                }
+                Some(cmp::Ordering::Equal)
             },
             _ => panic!("Shouldn't happen")
         }
@@ -128,7 +122,7 @@ pub fn parse_input(input: &str) -> Vec<(PacketData, PacketData)> {
 #[aoc(day13, part1)]
 fn sum_packets_in_order(input: &Vec<(PacketData, PacketData)>) -> u64 {
     let are_right_order = input.iter().map(|pair| {
-      if pair.0.compare(&pair.1).unwrap() {
+      if pair.0.partial_cmp(&pair.1).unwrap() == cmp::Ordering::Less {
         return 1;
       }
       0
@@ -150,15 +144,10 @@ fn locate_decoder_key(input: &Vec<(PacketData, PacketData)>) -> u64 {
     input_packets.push(divider1.clone());
     input_packets.push(divider2.clone());
 
-    input_packets.sort_by(|a, b| 
-        match a.compare(b) { 
-            Some(true) => cmp::Ordering::Less,
-            Some(false) => cmp::Ordering::Greater,
-            None => cmp::Ordering::Equal
-        });
+    input_packets.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let idx1 = input_packets.iter().position(|p| p.compare(&divider1) == None).unwrap() + 1;
-    let idx2 = input_packets.iter().position(|p| p.compare(&divider2) == None).unwrap() + 1;
+    let idx1 = input_packets.iter().position(|p| p.partial_cmp(&divider1).unwrap() == cmp::Ordering::Equal).unwrap() + 1;
+    let idx2 = input_packets.iter().position(|p| p.partial_cmp(&divider2).unwrap() == cmp::Ordering::Equal).unwrap() + 1;
 
     (idx1 * idx2) as u64
 }
@@ -198,21 +187,21 @@ mod tests {
         let b = PacketData::from("[[1],4]");
         println!("a = {}", a);
         println!("b = {}", b);
-        assert!(a.compare(&b).unwrap());
+        assert_eq!(a.partial_cmp(&b), Some(cmp::Ordering::Less));
     }
 
     #[test]
     fn test_day13_pair3() {
         let a = PacketData::from("[9]");
         let b = PacketData::from("[[8,7,6]]");
-        assert!(!a.compare(&b).unwrap());
+        assert_eq!(a.partial_cmp(&b), Some(cmp::Ordering::Greater));
     }
 
     #[test]
     fn test_day13_pair4() {
         let a = PacketData::from("[[4,4],4,4]");
         let b = PacketData::from("[[4,4],4,4,4]");
-        assert!(a.compare(&b).unwrap());
+        assert_eq!(a.partial_cmp(&b), Some(cmp::Ordering::Less));
     }
 
     #[test]
