@@ -2,6 +2,7 @@ use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 
 use std::fmt;
+use std::cmp;
 
 #[derive(Clone)]
 pub enum PacketData {
@@ -68,42 +69,53 @@ impl PacketData {
         }
     }
 
-    fn smaller(&self, other: &PacketData) -> bool {
-        //println!("Compare {:?} to {:?}", self, other);
-        match self {
-            PacketData::Integer(n) => {
-                match *other {
-                    PacketData::Integer(m) => {
-                        *n < m
-                    },
-                    PacketData::List(_) => PacketData::List(vec![self.clone()]).smaller(other)
+    fn to_list(integer: &PacketData) -> PacketData {
+        PacketData::List(vec![integer.clone()])
+    }
+
+    fn compare(&self, other: &PacketData) -> Option<bool> {
+        let (left, right) = match (self, other) {
+            (PacketData::Integer(_), PacketData::List(_)) => (Self::to_list(self), other.clone()),
+            (PacketData::List(_), PacketData::Integer(_)) => (self.clone(), Self::to_list(other)),
+            _=> (self.clone(), other.clone()),
+            };
+
+        match (left, right) {
+            (PacketData::Integer(n), PacketData::Integer(m)) => {
+                if n < m { 
+                    return Some(true);
                 }
+                else if n > m {
+                    return Some(false);
+                }
+                None
             },
-            PacketData::List(left) => {
-                match other {
-                    PacketData::Integer(_) => self.smaller(&PacketData::List(vec![other.clone()])),
-                    PacketData::List(right) => {
-                        for i in 0..left.len()  {
-                            let elem_l = left.iter().nth(i);
-                            let elem_r = right.iter().nth(i);
-                            if let Some(left) = elem_l {
-                                if let Some(right) = elem_r {
-                                    if left.smaller(right) {
-                                        return true;
-                                    }
-                                    else if right.smaller(left) {
-                                        return false;
-                                    }
+            (PacketData::List(left_list), PacketData::List(right_list)) => {
+                for i in 0..cmp::max(left_list.len(), right_list.len()) {
+                    let elem_l = left_list.iter().nth(i);
+                    let elem_r = right_list.iter().nth(i);
+                    if let Some(left) = elem_l {
+                        if let Some(right) = elem_r {
+                            if let Some(comparison) = left.compare(right) {
+                                if comparison == true {
+                                    return Some(true);
                                 }
-                                else {
-                                    return false;
+                                else if comparison == false {
+                                    return Some(false);
                                 }
                             }
+                        } else { 
+                            // right list ran out of items
+                            return Some(false);
                         }
-                        true
+                    } else if let Some(_) = elem_r {
+                        // left list ran out of items
+                        return Some(true);
                     }
                 }
-            }
+                None
+            },
+            _ => panic!("Shouldn't happen")
         }
     }
 }
@@ -125,7 +137,7 @@ pub fn parse_input(input: &str) -> Vec<(PacketData, PacketData)> {
 #[aoc(day13, part1)]
 fn sum_packets_in_order(input: &Vec<(PacketData, PacketData)>) -> u64 {
     let are_right_order = input.iter().map(|pair| {
-      if pair.0.smaller(&pair.1) {
+      if pair.0.compare(&pair.1).unwrap() {
         return 1;
       }
       0
@@ -138,6 +150,28 @@ fn sum_packets_in_order(input: &Vec<(PacketData, PacketData)>) -> u64 {
     }
     sum as u64
 }
+
+#[aoc(day13, part2)]
+fn locate_decoder_key(input: &Vec<(PacketData, PacketData)>) -> u64 {
+    let mut input_packets = input.iter().map(|p| vec![p.0.clone(), p.1.clone()]).into_iter().flatten().collect::<Vec<PacketData>>();
+    let divider1=  PacketData::from("[[2]]");
+    let divider2 = PacketData::from("[[6]]");
+    input_packets.push(divider1.clone());
+    input_packets.push(divider2.clone());
+
+    input_packets.sort_by(|a, b| 
+        match a.compare(b) { 
+            Some(true) => cmp::Ordering::Less,
+            Some(false) => cmp::Ordering::Greater,
+            None => cmp::Ordering::Equal
+        });
+
+    let idx1 = input_packets.iter().position(|p| p.compare(&divider1) == None).unwrap() + 1;
+    let idx2 = input_packets.iter().position(|p| p.compare(&divider2) == None).unwrap() + 1;
+
+    (idx1 * idx2) as u64
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -166,10 +200,37 @@ mod tests {
 
 [1,[2,[3,[4,[5,6,7]]]],8,9]
 [1,[2,[3,[4,[5,6,0]]]],8,9]";
+    
+    #[test]
+    fn test_day13_pair2() {
+        let a = PacketData::from("[[1],[2,3,4]]");
+        let b = PacketData::from("[[1],4]");
+        assert!(a.compare(&b).unwrap());
+    }
 
     #[test]
-    fn test_day12_part1() {
+    fn test_day13_pair3() {
+        let a = PacketData::from("[9]");
+        let b = PacketData::from("[[8,7,6]]");
+        assert!(!a.compare(&b).unwrap());
+    }
+
+    #[test]
+    fn test_day13_pair4() {
+        let a = PacketData::from("[[4,4],4,4]");
+        let b = PacketData::from("[[4,4],4,4,4]");
+        assert!(a.compare(&b).unwrap());
+    }
+
+    #[test]
+    fn test_day13_part1() {
         let input = parse_input(DAY13_EXAMPLE);
         assert_eq!(sum_packets_in_order(&input), 13);
+    }
+
+    #[test]
+    fn test_day13_part2() {
+        let input = parse_input(DAY13_EXAMPLE);
+        assert_eq!(locate_decoder_key(&input), 140);
     }
 }
