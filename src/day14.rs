@@ -2,6 +2,7 @@ use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use std::cmp;
 use std::collections::BTreeSet;
+use std::ops;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Point {
@@ -12,6 +13,16 @@ pub struct Point {
 impl Point {
     fn new(x: i32, y: i32) -> Point {
         Point { x: x, y: y }
+    }
+}
+
+impl ops::Add<Point> for Point {
+    type Output = Point;
+    fn add(self, _rhs: Point) -> Point {
+        Point {
+            x: self.x + _rhs.x,
+            y: self.y + _rhs.y,
+        }
     }
 }
 
@@ -29,15 +40,15 @@ impl Line {
         }
     }
 
-    pub fn contains(&self, point: (i32, i32)) -> bool {
-        (self.start.x <= point.0
-            && point.0 <= self.end.x
-            && self.start.y <= point.1
-            && point.1 <= self.end.y)
-            || (self.end.x <= point.0
-                && point.0 <= self.start.x
-                && self.end.y <= point.1
-                && point.1 <= self.start.y)
+    pub fn contains(&self, point: &Point) -> bool {
+        (self.start.x <= point.x
+            && point.x <= self.end.x
+            && self.start.y <= point.y
+            && point.y <= self.end.y)
+            || (self.end.x <= point.x
+                && point.x <= self.start.x
+                && self.end.y <= point.y
+                && point.y <= self.start.y)
     }
 }
 
@@ -72,115 +83,119 @@ pub fn parse_input(input: &str) -> Vec<Line> {
     ret
 }
 
-fn is_blocked_by_rocks(rocks: &Vec<Line>, point: (i32, i32)) -> bool {
-    for line in rocks {
-        if line.contains(point) {
-            return true;
-        }
-    }
-    return false;
-}
-
 type SandSet = BTreeSet<Point>;
 
-fn is_blocked_by_sand(sand: &SandSet, point: (i32, i32)) -> bool {
-    sand.contains(&Point::new(point.0, point.1))
+struct World<'a> {
+    pub rocks: &'a Vec<Line>,
+    pub resting_sand: SandSet,
+    pub source: Point,
+    pub floor: i32,
+    pub simulating: Option<Point>,
 }
 
-fn test_block(rocks: &Vec<Line>, sand: &SandSet, point: (i32, i32)) -> bool {
-    is_blocked_by_rocks(rocks, point) || is_blocked_by_sand(sand, point)
-}
-
-fn is_falling_to_void(rocks: &Vec<Line>, point: &Point) -> bool {
-    for l in rocks {
-        if point.y <= l.start.y && point.y <= l.end.y {
-            return false;
+impl World<'_> {
+    fn new(rocks: &Vec<Line>) -> World {
+        let floor = rocks
+            .iter()
+            .map(|l| cmp::max(l.start.y, l.end.y))
+            .max()
+            .unwrap()
+            + 2;
+        World {
+            rocks: rocks,
+            resting_sand: SandSet::new(),
+            source: Point::new(500, 0),
+            floor: floor,
+            simulating: None,
         }
     }
-    true
+
+    pub fn falling_under_walls(&self) -> bool {
+        if let Some(point) = self.simulating {
+            if point.y == self.floor - 1 {
+                return true;
+            }
+        }
+        self.resting_sand.iter().any(|p| p.y == self.floor - 1)
+    }
+
+    fn update_moving_sand(&mut self) -> bool {
+        let sand = self.simulating.unwrap();
+
+        // add the floor resting condition for part 2
+        if sand.y == self.floor - 1 {
+            // hit floor
+            return false;
+        }
+
+        let movement_directions = [Point::new(0, 1), Point::new(-1, 1), Point::new(1, 1)];
+        for vector in movement_directions {
+            let new_position = sand + vector;
+            if !self.is_blocked(&new_position) {
+                self.simulating = Some(new_position);
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn tick(&mut self) -> bool {
+        // if there is no sand, spawn one at source
+        if self.simulating.is_none() {
+            self.simulating = Some(Point::new(self.source.x, self.source.y));
+        }
+
+        if !self.update_moving_sand() {
+            let sand = self.simulating.unwrap();
+            self.resting_sand.insert(sand);
+            if sand != self.source {
+                // so we can check that a sand is blocking the source
+                self.simulating = None;
+            }
+            return true;
+        }
+        false
+    }
+
+    pub fn sand_blocking_source(&self) -> bool {
+        if let Some(sand) = self.simulating {
+            return sand == self.source;
+        }
+        false
+    }
+
+    pub fn is_blocked_by_rocks(&self, point: &Point) -> bool {
+        self.rocks.iter().any(|line| line.contains(point))
+    }
+
+    fn is_blocked_by_sand(&self, point: &Point) -> bool {
+        self.resting_sand.contains(point)
+    }
+
+    fn is_blocked(&self, point: &Point) -> bool {
+        self.is_blocked_by_rocks(point) || self.is_blocked_by_sand(point)
+    }
 }
 
 #[aoc(day14, part1)]
 fn count_sand_in_rest(input: &Vec<Line>) -> u64 {
-    let mut _time = 0;
-    let mut failing_to_void = false;
-    let mut resting_sand = SandSet::new();
-    while !failing_to_void {
-        let mut sand = Point::new(500, 0);
-        let mut resting = false;
+    let mut world = World::new(input);
 
-        while !resting {
-            let dirs = [(0, 1), (-1, 1), (1, 1)];
-            resting = true;
-            for d in dirs {
-                if !test_block(&input, &resting_sand, (sand.x + d.0, sand.y + d.1)) {
-                    sand.x = sand.x + d.0;
-                    sand.y = sand.y + d.1;
-                    resting = false;
-                    break;
-                }
-            }
-
-            _time += 1;
-
-            if resting {
-                resting_sand.insert(sand);
-            } else {
-                failing_to_void = is_falling_to_void(&input, &sand);
-                if failing_to_void {
-                    break;
-                }
-            }
-        }
+    while !world.falling_under_walls() {
+        world.tick();
     }
-    resting_sand.len() as u64
+    world.resting_sand.len() as u64
 }
 
 #[aoc(day14, part2)]
 fn count_sand_until_block(input: &Vec<Line>) -> u64 {
-    let floor = input
-        .iter()
-        .map(|l| cmp::max(l.start.y, l.end.y))
-        .max()
-        .unwrap()
-        + 2;
+    let mut world = World::new(input);
 
-    let mut _time = 0;
-    let mut resting_sand = SandSet::new();
-    let mut blocking_source = false;
-    let source = Point::new(500, 0);
-    while !blocking_source {
-        let mut sand = source;
-        let mut resting = false;
-
-        while !resting {
-            let dirs = [(0, 1), (-1, 1), (1, 1)];
-            resting = true;
-            for d in dirs {
-                if !test_block(&input, &resting_sand, (sand.x + d.0, sand.y + d.1)) {
-                    sand.x = sand.x + d.0;
-                    sand.y = sand.y + d.1;
-                    resting = false;
-                    break;
-                }
-            }
-
-            if sand.y == floor - 1 {
-                resting = true;
-            }
-
-            _time += 1;
-
-            if resting {
-                resting_sand.insert(sand);
-            }
-            if sand == source {
-                blocking_source = true;
-                break;
-            }
-        }
+    while !world.sand_blocking_source() {
+        world.tick();
     }
-    resting_sand.len() as u64
+
+    world.resting_sand.len() as u64
 }
 
 #[cfg(test)]
@@ -194,21 +209,22 @@ mod tests {
     fn test_day14_contains() {
         let line = Line::new((502, 9), (494, 9));
         let point = Point::new(500, 9);
-        assert!(line.contains((point.x, point.y)));
+        assert!(line.contains(&point));
     }
 
     #[test]
     fn test_day14_contains2() {
         let line = Line::new((502, 4), (502, 9));
         let point = Point::new(502, 8);
-        assert!(line.contains((point.x, point.y)));
+        assert!(line.contains(&point));
     }
 
     #[test]
     fn test_day14_blocks() {
         let input = parse_input(DAY14_EXAMPLE);
+        let world = World::new(&input);
         let point = Point::new(502, 8);
-        assert!(is_blocked_by_rocks(&input, (point.x, point.y)));
+        assert!(world.is_blocked(&point));
     }
 
     #[test]
