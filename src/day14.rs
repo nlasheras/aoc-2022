@@ -35,20 +35,16 @@ pub struct Line {
 impl Line {
     fn new(start: (i32, i32), end: (i32, i32)) -> Line {
         Line {
-            start: Point::new(start.0, start.1),
-            end: Point::new(end.0, end.1),
+            start: Point::new(cmp::min(start.0, end.0), cmp::min(start.1, end.1)),
+            end: Point::new(cmp::max(start.0, end.0), cmp::max(start.1, end.1)),
         }
     }
 
     pub fn contains(&self, point: &Point) -> bool {
-        (self.start.x <= point.x
+        self.start.x <= point.x
             && point.x <= self.end.x
             && self.start.y <= point.y
-            && point.y <= self.end.y)
-            || (self.end.x <= point.x
-                && point.x <= self.start.x
-                && self.end.y <= point.y
-                && point.y <= self.start.y)
+            && point.y <= self.end.y
     }
 }
 
