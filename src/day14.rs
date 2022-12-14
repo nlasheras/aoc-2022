@@ -1,5 +1,6 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use itertools::Itertools;
 use std::cmp;
 use std::collections::BTreeSet;
 use std::ops;
@@ -50,33 +51,23 @@ impl Line {
 
 #[aoc_generator(day14)]
 pub fn parse_input(input: &str) -> Vec<Line> {
-    let points = input
+    input
         .split("\n")
         .map(|s| {
-            let parts = s
-                .split(" -> ")
+            s.split(" -> ")
                 .map(|s| {
-                    let nums = s
-                        .split(",")
+                    s.split(",")
                         .map(|s| s.parse::<i32>().unwrap())
-                        .collect::<Vec<i32>>();
-                    (nums[0], nums[1])
+                        .collect_tuple::<(i32, i32)>()
+                        .unwrap()
                 })
-                .collect::<Vec<(i32, i32)>>();
-            parts
+                .collect::<Vec<(i32, i32)>>()
+                .windows(2)
+                .map(|w| Line::new(w[0], w[1]))
+                .collect::<Vec<Line>>()
         })
-        .collect::<Vec<Vec<(i32, i32)>>>();
-
-    let mut ret = Vec::<Line>::new();
-    for lines in points.into_iter() {
-        for i in 1..lines.len() {
-            ret.push(Line::new(
-                (lines[i - 1].0, lines[i - 1].1),
-                (lines[i].0, lines[i].1),
-            ));
-        }
-    }
-    ret
+        .flatten()
+        .collect()
 }
 
 type SandSet = BTreeSet<Point>;

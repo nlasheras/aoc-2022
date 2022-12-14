@@ -56,3 +56,7 @@ Today should have been much easier, but stumbled against the problem a long whil
 ### Day 13
 
 Today was one of the days were half of the challenge is parsing and the other half is implementing the logic. The trick of using a recursive enum to implement it was possible in Rust, so that helped a lot. I opted for taking shortcuts in the solution, since I couldn't figure out the proper way of finding the sub slices (after getting the starts I took the time to figure it out). Also when doing part 2 I realized that my *compare* function was equivalent to `cmp::PartialOrd`, so I switched the solution to be a implementation it. The unit tests have been a great help during the parsing and initial implementation, since I could easily isolate the problem pairs and debug them step by step to find the problem in logic.
+
+### Day 14
+
+After a couple rough days, today I had a smoother experience with the exercise. Since I remember last year Origami puzzle, this time I assumed that using the grid won't be a good idea and started from having the rock walls in an array and then keeping a list of the "resting" sand (I ended up switching it to a `BTreeSet` for part 2, when there is much more sand to worry about). My initial implementation wasn't very clean, so the easiest way to solve part 2 was to duplicate the function and just hack the floor part there. I then later done the proper cleanup to have a helper `World` struct. 
