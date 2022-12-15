@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops;
 
 // Grid by Belén Albeza
 // https://github.com/belen-albeza/aoc-2021/blob/main/src/utils.rs
@@ -86,5 +87,32 @@ impl<T: Clone + fmt::Debug> fmt::Display for Grid<T> {
             buffer.push('\n');
         }
         writeln!(f, "{}", buffer)
+    }
+}
+
+// use day14.rs Point as base
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Point {
+    pub fn new(x: i32, y: i32) -> Point {
+        Point { x: x, y: y }
+    }
+
+    pub fn manhattan_dist(&self, other: &Point) -> i32 {
+        (self.x - other.x).abs() + (self.y - other.y).abs()
+    }
+}
+
+impl ops::Add<Point> for Point {
+    type Output = Point;
+    fn add(self, _rhs: Point) -> Point {
+        Point {
+            x: self.x + _rhs.x,
+            y: self.y + _rhs.y,
+        }
     }
 }
