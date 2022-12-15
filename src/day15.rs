@@ -40,6 +40,17 @@ pub fn parse_input(input: &str) -> Vec<Sensor> {
         .collect()
 }
 
+fn cannot_contain_beacon(sensors: &Vec<Sensor>, pos: (i32, i32), count_beacons: bool) -> bool {
+    let candidate = Point::new(pos.0, pos.1);
+    if sensors.iter().any(|s| s.closest_beacon == candidate) {
+        return count_beacons; // there is already a beacon
+    }
+    sensors.iter().any(|s| {
+        let dist = s.pos.manhattan_dist(&candidate);
+        dist <= s.pos.manhattan_dist(&s.closest_beacon)
+    })
+}
+
 fn count_positions_in_row(sensors: &Vec<Sensor>, row: i32) -> u64 {
     let mut min_x = i32::MAX;
     let mut max_x = i32::MIN;
@@ -48,26 +59,31 @@ fn count_positions_in_row(sensors: &Vec<Sensor>, row: i32) -> u64 {
         max_x = cmp::max(s.pos.x + s.pos.manhattan_dist(&s.closest_beacon), max_x);
     });
 
-    let mut sum = 0;
-    for x in min_x..=max_x {
-        let candidate = Point::new(x, row);
-        if sensors.iter().any(|s| s.closest_beacon == candidate) {
-            continue; // there is already a beacon
-        }
-        if sensors.iter().any(|s| {
-            let closest_dist = s.pos.manhattan_dist(&s.closest_beacon);
-            let dist = s.pos.manhattan_dist(&candidate);
-            dist <= closest_dist
-        }) {
-            sum += 1;
-        }
-    }
-    sum
+    (min_x..=max_x)
+        .filter(|x| cannot_contain_beacon(sensors, (*x, row), false))
+        .count() as u64
 }
 
 #[aoc(day15, part1)]
 pub fn count_positions_in_row_10(input: &Vec<Sensor>) -> u64 {
     count_positions_in_row(input, 2000000)
+}
+
+pub fn find_distress_signal(sensors: &Vec<Sensor>, max: i32) -> u64 {
+    for x in 0..=max {
+        for y in 0..=max {
+            if cannot_contain_beacon(sensors, (x, y), true) {
+                continue;
+            }
+            return (x * 4000000 + y) as u64;
+        }
+    }
+    0
+}
+
+#[aoc(day15, part2)]
+pub fn find_distress_signal_in_range(input: &Vec<Sensor>) -> u64 {
+    find_distress_signal(input, 4000000)
 }
 
 #[cfg(test)]
@@ -93,5 +109,11 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
     fn test_day15_part1() {
         let input = parse_input(DAY15_EXAMPLE);
         assert_eq!(count_positions_in_row(&input, 10), 26);
+    }
+
+    #[test]
+    fn test_day15_part2() {
+        let input = parse_input(DAY15_EXAMPLE);
+        assert_eq!(find_distress_signal(&input, 20), 56000011);
     }
 }
