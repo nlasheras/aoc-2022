@@ -60,3 +60,7 @@ Today was one of the days were half of the challenge is parsing and the other ha
 ### Day 14
 
 After a couple rough days, today I had a smoother experience with the exercise. Since I remember last year Origami puzzle, this time I assumed that using the grid won't be a good idea and started from having the rock walls in an array and then keeping a list of the "resting" sand (I ended up switching it to a `BTreeSet` for part 2, when there is much more sand to worry about). My initial implementation wasn't very clean, so the easiest way to solve part 2 was to duplicate the function and just hack the floor part there. I then later done the proper cleanup to have a helper `World` struct. 
+
+### Day 15
+
+Today it has been pretty tricky puzzle. The implementation was pretty straight-forward, but I needed a tip for part 2. I was maybe too stubborn trying to map other previous puzzles and didn't realize that if there is only one point, there is something that could be inferred from it. 

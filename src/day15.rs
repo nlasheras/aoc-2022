@@ -1,9 +1,8 @@
+use crate::utils::Point;
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use regex::Regex;
 use std::cmp;
-
-use crate::utils::Point;
 
 pub struct Sensor {
     pub pos: Point,
@@ -69,9 +68,9 @@ pub fn count_positions_in_row_10(input: &Vec<Sensor>) -> u64 {
     count_positions_in_row(input, 2000000)
 }
 
-pub fn find_distress_signal(sensors: &Vec<Sensor>, max: i32) -> u64 {
-    for x in 0..=max {
-        for y in 0..=max {
+pub fn find_distress_signal_bruteforce(sensors: &Vec<Sensor>, min: i32, max: i32) -> u64 {
+    for x in min..=max {
+        for y in min..=max {
             if cannot_contain_beacon(sensors, (x, y), true) {
                 continue;
             }
@@ -81,9 +80,43 @@ pub fn find_distress_signal(sensors: &Vec<Sensor>, max: i32) -> u64 {
     0
 }
 
+fn get_perimeter(s: &Sensor) -> Vec<Point> {
+    let mut points = Vec::new();
+    let mhd = s.pos.manhattan_dist(&s.closest_beacon);
+    let min_x = s.pos.x - mhd;
+    let max_x = s.pos.x + mhd;
+    let mid_x = (max_x - min_x) / 2 + min_x;
+    for x in min_x - 1..=max_x + 1 {
+        let y = if x <= mid_x {
+            x - min_x + 1
+        } else {
+            max_x + 1 - x
+        };
+        points.push(Point::new(x, s.pos.y + y));
+        points.push(Point::new(x, s.pos.y - y));
+    }
+    points
+}
+
+pub fn find_distress_signal(sensors: &Vec<Sensor>, min: i32, max: i32) -> u64 {
+    for s in sensors.iter() {
+        let perimeter = get_perimeter(s);
+        for p in perimeter {
+            if p.x < min || p.x > max || p.y < min || p.y > max {
+                continue;
+            }
+
+            if !cannot_contain_beacon(sensors, (p.x, p.y), true) {
+                return p.x as u64 * 4000000 + p.y as u64;
+            }
+        }
+    }
+    0
+}
+
 #[aoc(day15, part2)]
 pub fn find_distress_signal_in_range(input: &Vec<Sensor>) -> u64 {
-    find_distress_signal(input, 4000000)
+    find_distress_signal(input, 0, 4000000)
 }
 
 #[cfg(test)]
@@ -114,6 +147,6 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
     #[test]
     fn test_day15_part2() {
         let input = parse_input(DAY15_EXAMPLE);
-        assert_eq!(find_distress_signal(&input, 20), 56000011);
+        assert_eq!(find_distress_signal(&input, 0, 20), 56000011);
     }
 }
