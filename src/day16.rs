@@ -1,12 +1,10 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
-use petgraph::graph::Node;
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
+use petgraph::algo::dijkstra;
 use std::collections::HashMap;
-use priority_queue::DoublePriorityQueue;
 use std::cmp;
-use std::collections::BTreeSet;
 
 #[aoc_generator(day16)]
 pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
@@ -58,96 +56,45 @@ pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
     graph
 }
 
-fn print_path(graph: &Graph<(String, i32), i32>, path: &Vec<NodeIndex>) -> String {
-    let mut buffer = "".to_string();
-    for n in path {
-        if buffer.len() == 0 {
-            buffer.push('[')
-        }
-        if buffer.len() > 1 {
-            buffer.push(',');
-        }
-        let (name, _) = graph.node_weight(*n).unwrap();
-        buffer.push_str(name)
+
+
+fn find_max(graph: &Graph<(String, i32), i32>, current: &NodeIndex, steps: i32,  valves_to_open:&Vec<NodeIndex>) -> u32 {
+    if valves_to_open.is_empty() {
+        return 0;
     }
-    if buffer.len() > 0 { 
-        buffer.push(']');
+
+    let mut max = 0;
+    for n in valves_to_open.iter() {
+        let w = graph.node_weight(*n).unwrap();
+    
+        let paths = dijkstra(graph, *current, Some(*n), |_| 1);
+
+        let steps_to_go = paths.get(n).unwrap();
+        let remaining = steps - *steps_to_go - 1;
+        let flow = remaining * w.1;
+
+        
+        let mut tmp = valves_to_open.clone();
+        tmp.retain(|v| *v != *n);
+        let sub = find_max(graph, n, remaining, &tmp);
+
+        max = cmp::max(max, flow as u32 + sub);
     }
-    buffer
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Ord)]
-struct Priority
-{
-    pub steps : usize,
-    pub flow: i32
-}
-
-impl PartialOrd for Priority {
-    fn partial_cmp(&self, other: &Priority) -> Option<cmp::Ordering> {
-        if self.flow > other.flow {
-            return Some(cmp::Ordering::Less);
-        }
-        else if self.flow < other.flow {
-            return Some(cmp::Ordering::Greater);
-        }
-        self.steps.partial_cmp(&other.steps)
-    }
-}
-
-fn path_complete(graph: &Graph<(String, i32), i32>, path: &Vec<NodeIndex>) -> bool {
-    graph.node_indices().all(|i| path.contains(&i))
-}
-
-fn is_open(path: &Vec<NodeIndex>, n: &NodeIndex) -> bool {
-    path.windows(2).any(|w| w[0] == *n && w[0] == w[1])
+    max
 }
 
 fn find_best_path(graph: &Graph<(String, i32), i32>) -> u64 {
-    let mut candidates = DoublePriorityQueue::new();
-
-    let mut _c = 0;
-    let aa = graph.node_indices().nth(0).unwrap();
-    candidates.push(vec![aa], Priority{steps: 0, flow: 0});
-
-    println!("Start!");
-    while !candidates.is_empty() {
-        _c += 1;
-
-        // get the path with the biggest
-        let (path, _priority) = candidates.pop_min().unwrap();
-        
-        if _c % 100000 == 0 {
-            println!("evaluating {} {} ({}/{}) {}", _c, print_path(graph, &path), _priority.steps, _priority.flow, candidates.len());
+    let mut valves_to_open = Vec::new();
+    graph.node_indices().for_each(|i| {
+        let w = graph.node_weight(i).unwrap();
+        if w.1 > 0 {
+            valves_to_open.push(i);
         }
-        
-        if path_complete(graph, &path) {
-            println!("evaluating {} ({}/{})", print_path(graph, &path), _priority.steps, _priority.flow);
-            println!(" this is best!");
-            return 1;
-        }
-        else
-        {
-            let last = path[path.len() - 1];
-            for n in graph.neighbors(last) {
-                let w = graph.node_weight(n).unwrap();
-                let mut new_path = Vec::from(path.clone());
-                new_path.push(n);
+    });
 
-
-                if !is_open(&path, &n) && _priority.steps < 28 && w.1 > 0 {
-                    let flow = _priority.flow + w.1 * (28 - _priority.steps) as i32;
-                    let mut new_path2 = Vec::from(new_path.clone());
-                    new_path2.push(n);
-                    candidates.push(new_path2, Priority{ steps: _priority.steps+2, flow: flow});
-                }
-                candidates.push(new_path, Priority{ steps: _priority.steps+1, flow: _priority.flow});
-
-            }
-        }
-    }
-    
-    0
+    println!("Need to open {} valves", valves_to_open.len());
+    let start = graph.node_indices().nth(0).unwrap();
+    find_max(graph, &start, 30, &valves_to_open) as u64
 }
 
 #[aoc(day16, part1)]
