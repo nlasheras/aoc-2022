@@ -59,44 +59,47 @@ pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
 
 type Paths = HashMap<NodeIndex, HashMap<NodeIndex, i32>>;
 
-fn find_max(graph: &Graph<(String, i32), i32>, paths: &Paths, current: &NodeIndex, steps: i32,  valves_to_open:&Vec<NodeIndex>) -> u32 {
+fn find_max(_graph: &Graph<(String, i32), i32>, weights: &HashMap<NodeIndex, i32>, paths: &Paths, current: &NodeIndex, steps: i32,  valves_to_open:&Vec<NodeIndex>) -> u32 {
     if valves_to_open.is_empty() {
         return 0;
     }
 
-    let mut max = 0;
+    let mut max : u32 = 0;
     for n in valves_to_open.iter() {
-        let w = graph.node_weight(*n).unwrap();
+        let w = weights.get(n).unwrap();
     
         let steps_to_go = paths.get(current).unwrap().get(n).unwrap();
-        let remaining = steps - *steps_to_go - 1;
-        let flow = remaining * w.1;
 
-        
-        let mut tmp = valves_to_open.clone();
-        tmp.retain(|v| *v != *n);
-        let sub = find_max(graph, paths, n, remaining, &tmp);
-
-        max = cmp::max(max, flow as u32 + sub);
+        if steps > *steps_to_go {
+            let remaining = steps - *steps_to_go - 1;
+            let flow = remaining * w;
+            max = cmp::max(max, flow as u32);
+            let mut tmp = valves_to_open.clone();
+            tmp.retain(|v| *v != *n);
+            let sub = find_max(_graph, weights, paths, n, remaining, &tmp);
+            max = cmp::max(max, flow as u32 + sub);
+        }
     }
-    max
+    max 
 }
 
 fn find_best_path(graph: &Graph<(String, i32), i32>) -> u64 {
     let mut valves_to_open = Vec::new();
     let mut all_paths = Paths::new();
+    let mut all_weights = HashMap::<NodeIndex, i32>::new();
     graph.node_indices().for_each(|i| {
         let w = graph.node_weight(i).unwrap();
         let paths = dijkstra(graph, i, None, |_| 1);
         all_paths.insert(i, paths);
         if w.1 > 0 {
             valves_to_open.push(i);
+            all_weights.insert(i, w.1);
         }
     });
 
     println!("Need to open {} valves", valves_to_open.len());
-    let start = graph.node_indices().nth(0).unwrap();
-    find_max(graph, &all_paths, &start, 30, &valves_to_open) as u64
+    let start = graph.node_indices().find(|i| graph.node_weight(*i).unwrap().0 == "AA").unwrap();
+    find_max(graph, &all_weights, &all_paths, &start, 30, &valves_to_open) as u64
 }
 
 #[aoc(day16, part1)]
@@ -124,4 +127,6 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         let input = parse_input(DAY16_EXAMPLE);
         assert_eq!(find_most_pressure(&input), 1651);
     }
+
+
 }
