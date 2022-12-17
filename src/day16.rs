@@ -59,7 +59,7 @@ pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
 
 type Paths = HashMap<NodeIndex, HashMap<NodeIndex, i32>>;
 
-fn find_max(_graph: &Graph<(String, i32), i32>, weights: &HashMap<NodeIndex, i32>, paths: &Paths, current: &NodeIndex, steps: i32,  valves_to_open:&Vec<NodeIndex>) -> u32 {
+fn find_max(_graph: &Graph<(String, i32), i32>, weights: &HashMap<NodeIndex, i32>, paths: &Paths, start: &NodeIndex, current: &NodeIndex, human_steps: i32, elefant_steps: i32, valves_to_open:&Vec<NodeIndex>) -> u32 {
     if valves_to_open.is_empty() {
         return 0;
     }
@@ -70,20 +70,24 @@ fn find_max(_graph: &Graph<(String, i32), i32>, weights: &HashMap<NodeIndex, i32
     
         let steps_to_go = paths.get(current).unwrap().get(n).unwrap();
 
-        if steps > *steps_to_go {
-            let remaining = steps - *steps_to_go - 1;
+        if human_steps > *steps_to_go {
+            let remaining = human_steps - *steps_to_go - 1;
             let flow = remaining * w;
             max = cmp::max(max, flow as u32);
             let mut tmp = valves_to_open.clone();
             tmp.retain(|v| *v != *n);
-            let sub = find_max(_graph, weights, paths, n, remaining, &tmp);
+            let sub = find_max(_graph, weights, paths, start, n, remaining, elefant_steps, &tmp);
             max = cmp::max(max, flow as u32 + sub);
         }
+    }
+    if max == 0 && elefant_steps > 0 {
+        let elephant_open = find_max(_graph, weights, paths, start, start, elefant_steps, 0, valves_to_open);
+        max = cmp::max(max, elephant_open);
     }
     max 
 }
 
-fn find_best_path(graph: &Graph<(String, i32), i32>) -> u64 {
+fn find_best_path(graph: &Graph<(String, i32), i32>, human_steps: i32, elefant_steps: i32) -> u64 {
     let mut valves_to_open = Vec::new();
     let mut all_paths = Paths::new();
     let mut all_weights = HashMap::<NodeIndex, i32>::new();
@@ -97,14 +101,18 @@ fn find_best_path(graph: &Graph<(String, i32), i32>) -> u64 {
         }
     });
 
-    println!("Need to open {} valves", valves_to_open.len());
     let start = graph.node_indices().find(|i| graph.node_weight(*i).unwrap().0 == "AA").unwrap();
-    find_max(graph, &all_weights, &all_paths, &start, 30, &valves_to_open) as u64
+    find_max(graph, &all_weights, &all_paths, &start, &start, human_steps, elefant_steps, &valves_to_open) as u64
 }
 
 #[aoc(day16, part1)]
 pub fn find_most_pressure(input: &Graph<(String, i32), i32>) -> u64 {
-    find_best_path(input)
+    find_best_path(input, 30, 0)
+}
+
+#[aoc(day16, part2)]
+pub fn find_most_pressure_with_help(input: &Graph<(String, i32), i32>) -> u64 {
+    find_best_path(input, 26, 26)
 }
 
 #[cfg(test)]
@@ -125,7 +133,14 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
     #[test]
     fn test_day16_part1() {
         let input = parse_input(DAY16_EXAMPLE);
-        assert_eq!(find_most_pressure(&input), 1651);
+        assert_eq!(find_best_path(&input, 30, 0), 1651);
+    }
+
+    #[ignore]
+    #[test]
+    fn test_day16_part2() {
+        let input = parse_input(DAY16_EXAMPLE);
+        assert_eq!(find_best_path(&input, 26, 26), 1651);
     }
 
 
