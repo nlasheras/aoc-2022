@@ -64,3 +64,7 @@ After a couple rough days, today I had a smoother experience with the exercise. 
 ### Day 15
 
 Today it has been pretty tricky puzzle. The implementation was pretty straight-forward, but I needed a tip for part 2. I was maybe too stubborn trying to map other previous puzzles and didn't realize that if there is only one point, there is something that could be inferred from it. 
+
+### Day 16 :warning:
+
+Company christmas party today! Didn't have much time to work on this. My initial approach didn't work for input so I started to micro-optimize with no avail. After the party and a good night sleep I found that I had made a couple of wrong assumptions (AA is not always at the first element). Also the biggest optimization is that you can prune off the DFS around depth 8 in the real input because you won't have time to reach anything else. Still want to clean it and figure out why my input doesn't work in the input. 

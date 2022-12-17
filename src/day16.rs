@@ -1,10 +1,10 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use petgraph::algo::dijkstra;
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
-use petgraph::algo::dijkstra;
-use std::collections::HashMap;
 use std::cmp;
+use std::collections::HashMap;
 
 #[aoc_generator(day16)]
 pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
@@ -56,18 +56,26 @@ pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
     graph
 }
 
-
 type Paths = HashMap<NodeIndex, HashMap<NodeIndex, i32>>;
 
-fn find_max(_graph: &Graph<(String, i32), i32>, weights: &HashMap<NodeIndex, i32>, paths: &Paths, start: &NodeIndex, current: &NodeIndex, human_steps: i32, elefant_steps: i32, valves_to_open:&Vec<NodeIndex>) -> u32 {
+fn find_max(
+    _graph: &Graph<(String, i32), i32>,
+    weights: &HashMap<NodeIndex, i32>,
+    paths: &Paths,
+    start: &NodeIndex,
+    current: &NodeIndex,
+    human_steps: i32,
+    elefant_steps: i32,
+    valves_to_open: &Vec<NodeIndex>,
+) -> u32 {
     if valves_to_open.is_empty() {
         return 0;
     }
 
-    let mut max : u32 = 0;
+    let mut max: u32 = 0;
     for n in valves_to_open.iter() {
         let w = weights.get(n).unwrap();
-    
+
         let steps_to_go = paths.get(current).unwrap().get(n).unwrap();
 
         if human_steps > *steps_to_go {
@@ -76,15 +84,33 @@ fn find_max(_graph: &Graph<(String, i32), i32>, weights: &HashMap<NodeIndex, i32
             max = cmp::max(max, flow as u32);
             let mut tmp = valves_to_open.clone();
             tmp.retain(|v| *v != *n);
-            let sub = find_max(_graph, weights, paths, start, n, remaining, elefant_steps, &tmp);
+            let sub = find_max(
+                _graph,
+                weights,
+                paths,
+                start,
+                n,
+                remaining,
+                elefant_steps,
+                &tmp,
+            );
             max = cmp::max(max, flow as u32 + sub);
         }
     }
     if max == 0 && elefant_steps > 0 {
-        let elephant_open = find_max(_graph, weights, paths, start, start, elefant_steps, 0, valves_to_open);
+        let elephant_open = find_max(
+            _graph,
+            weights,
+            paths,
+            start,
+            start,
+            elefant_steps,
+            0,
+            valves_to_open,
+        );
         max = cmp::max(max, elephant_open);
     }
-    max 
+    max
 }
 
 fn find_best_path(graph: &Graph<(String, i32), i32>, human_steps: i32, elefant_steps: i32) -> u64 {
@@ -101,8 +127,20 @@ fn find_best_path(graph: &Graph<(String, i32), i32>, human_steps: i32, elefant_s
         }
     });
 
-    let start = graph.node_indices().find(|i| graph.node_weight(*i).unwrap().0 == "AA").unwrap();
-    find_max(graph, &all_weights, &all_paths, &start, &start, human_steps, elefant_steps, &valves_to_open) as u64
+    let start = graph
+        .node_indices()
+        .find(|i| graph.node_weight(*i).unwrap().0 == "AA")
+        .unwrap();
+    find_max(
+        graph,
+        &all_weights,
+        &all_paths,
+        &start,
+        &start,
+        human_steps,
+        elefant_steps,
+        &valves_to_open,
+    ) as u64
 }
 
 #[aoc(day16, part1)]
@@ -142,6 +180,4 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         let input = parse_input(DAY16_EXAMPLE);
         assert_eq!(find_best_path(&input, 26, 26), 1651);
     }
-
-
 }
