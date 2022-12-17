@@ -8,7 +8,7 @@ pub fn parse_input(input: &str) -> Vec<char> {
     input.chars().filter(|c| *c == '>' || *c == '<').collect()
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Shape {
     Flat,
     Plus,
@@ -132,7 +132,10 @@ impl World {
 
     pub fn tick(&mut self, streams: &Vec<char>) -> bool {
         if self.falling.is_none() {
-            let pos = Point::new(3, self.highest_height() + 3);
+            let mut pos = Point::new(3, self.highest_height() + 4);
+            if self.next_shape == Shape::Square || self.next_shape == Shape::Tall {
+                pos.x -= 1;
+            }
             self.falling = Some(Rock::new(pos, self.next_shape.clone()));
             self.next_shape = self.next_shape.next();
         }
@@ -169,7 +172,7 @@ impl World {
     pub fn highest_height(&self) -> i32 {
         self.rocks
             .iter()
-            .fold(0, |accum, r| cmp::max(accum, r.bb().0.y))
+            .fold(-1, |accum, r| cmp::max(accum, r.bb().0.y))
     }
 }
 #[aoc(day17, part1)]
