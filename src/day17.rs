@@ -82,7 +82,11 @@ impl Rock {
     pub fn collide(&self, other: &Rock) -> bool {
         let bb = self.bb();
         let bb2 = other.bb();
-        if Self::between(&bb2.0, &bb.0, &bb.1) || Self::between(&bb2.1, &bb.0, &bb.1) {
+        if Self::between(&bb2.0, &bb.0, &bb.1)
+            || Self::between(&bb2.1, &bb.0, &bb.1)
+            || Self::between(&bb.0, &bb2.0, &bb2.1)
+            || Self::between(&bb.1, &bb2.0, &bb2.1)
+        {
             let p1 = self
                 .shape
                 .points()
@@ -188,6 +192,7 @@ mod tests {
 
     const DAY17_EXAMPLE: &str = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
 
+    //#[ignore]
     #[test]
     fn test_day17_part1() {
         let input = parse_input(DAY17_EXAMPLE);
@@ -199,5 +204,62 @@ mod tests {
         let flat = Rock::new(Point::new(3, 0), Shape::Flat);
         let plus = Rock::new(Point::new(3, 0), Shape::Plus);
         assert_eq!(plus.collide(&flat), true);
+        assert_eq!(flat.collide(&plus), true);
+    }
+
+    #[test]
+    fn test_day17_collide2() {
+        let flat = Rock::new(Point::new(3, 0), Shape::Flat);
+        let lshape = Rock::new(Point::new(1, 0), Shape::L);
+        assert_eq!(flat.collide(&lshape), true);
+        assert_eq!(lshape.collide(&flat), true);
+    }
+
+    #[test]
+    fn test_day17_collide3() {
+        let plus = Rock::new(Point::new(1, 2), Shape::Plus);
+        let lshape = Rock::new(Point::new(1, 0), Shape::L);
+        assert_eq!(plus.collide(&lshape), false);
+        assert_eq!(lshape.collide(&plus), false);
+    }
+
+    #[test]
+    fn test_day17_collide4() {
+        let plus = Rock::new(Point::new(1, 1), Shape::Plus);
+        let lshape = Rock::new(Point::new(1, 0), Shape::L);
+        assert_eq!(plus.collide(&lshape), true);
+        assert_eq!(lshape.collide(&plus), true);
+    }
+
+    #[test]
+    fn test_day17_collide5() {
+        let tall = Rock::new(Point::new(3, 0), Shape::Tall);
+        let lshape = Rock::new(Point::new(1, 0), Shape::L);
+        assert_eq!(tall.collide(&lshape), false);
+        assert_eq!(lshape.collide(&tall), false);
+    }
+
+    #[test]
+    fn test_day17_collide6() {
+        let plus = Rock::new(Point::new(2, 1), Shape::Plus);
+        let tall = Rock::new(Point::new(2, 0), Shape::Tall);
+        assert_eq!(plus.collide(&tall), true);
+        assert_eq!(tall.collide(&plus), true);
+    }
+
+    #[test]
+    fn test_day17_collide7() {
+        let square = Rock::new(Point::new(0, 1), Shape::Square);
+        let lshape = Rock::new(Point::new(1, 0), Shape::L);
+        assert_eq!(square.collide(&lshape), false);
+        assert_eq!(lshape.collide(&square), false);
+    }
+
+    #[test]
+    fn test_day17_collide8() {
+        let plus = Rock::new(Point::new(1, 2), Shape::Plus);
+        let square = Rock::new(Point::new(0, 1), Shape::Square);
+        assert_eq!(plus.collide(&square), true);
+        assert_eq!(square.collide(&plus), true);
     }
 }
