@@ -68,3 +68,11 @@ Today it has been pretty tricky puzzle. The implementation was pretty straight-f
 ### Day 16 :warning:
 
 Company christmas party today! Didn't have much time to work on this. My initial approach didn't work for input so I started to micro-optimize with no avail. After the party and a good night sleep I found that I had made a couple of wrong assumptions (AA is not always at the first element). Also the biggest optimization is that you can prune off the DFS around depth 8 in the real input because you won't have time to reach anything else. Still want to clean it and figure out why my input doesn't work in the input. 
+
+### Day 17 
+
+I was traveling today, so I couldn't invest much time on this. I squeezed some time here and there to start implementing it but finished it during the 18th. My initial implementation was a bit complicated to debug the issues since I chose the pivot on the center of the shape instead of the bottom right. I started maybe too long debugging bounding box issues while in the end just culling for distance was good enough. The trick of part 2 was pretty interesting to figure out, really enjoyed this one. 
+
+### Day 18
+
+This one was a very welcome easier one. When reading the puzzle I was expecting to have to figure out some smart spatial organization to query the cubes efficiently. But when looking at the input, with just a bit more than 2800 cubes it was enough to use a `BTreeSet`. 
