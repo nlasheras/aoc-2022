@@ -101,6 +101,8 @@ struct World {
     pub next_shape: Shape,
     pub time: u32,
     falling: Option<Rock>,
+    heights: Vec<i32>,
+    pub pattern: Option<usize>,
 }
 
 impl World {
@@ -110,11 +112,33 @@ impl World {
             next_shape: Shape::Flat,
             time: 0,
             falling: None,
+            heights: Vec::new(),
+            pattern: None,
         }
     }
 
     fn collide(&self, rock: &Rock) -> bool {
         self.rocks.iter().rev().any(|r| r.collide(&rock))
+    }
+
+    fn check_pattern(&mut self) -> () {
+        let max_width = self.heights.len() / 2;
+
+        for rw in 0..=max_width - 10 {
+            let pw = max_width - rw;
+            let mut correct = true;
+            let offset = self.heights.len() - pw * 2;
+            for i in 0..pw {
+                if self.heights[offset + i] != self.heights[offset + pw + i] {
+                    correct = false;
+                    break;
+                }
+            }
+            if correct {
+                println!("Found pattern with width = {}", pw);
+                self.pattern = Some(pw);
+            }
+        }
     }
 
     pub fn tick(&mut self, streams: &Vec<char>) -> bool {
@@ -144,13 +168,44 @@ impl World {
         let downward = Rock::new(rock.pos + Point::new(0, -1), rock.shape);
         if self.collide(&downward) || downward.bb().1.y == -1 {
             // resting
+            let old = self.highest_height();
             self.rocks.push(rock);
+            self.heights.push(self.highest_height() - old);
             self.falling = None;
+            if self.time > streams.len() as u32 * 4 {
+                self.check_pattern();
+            }
             return true;
         } else {
             self.falling = Some(downward);
         }
         false
+    }
+
+    pub fn sum_height_using_pattern(&self, count: i64) -> u64 {
+        let mut sum = 0;
+        if count <= self.heights.len() as i64 {
+            for i in 0..count {
+                sum += self.heights[i as usize];
+            }
+
+            return sum as u64;
+        }
+
+        let width = self.pattern.unwrap() as i64;
+        let offset = self.heights.len() as i64 - width;
+        let count_div = (count - offset) / width;
+        let count_mod = (count - offset) % width;
+
+        let offset_sum: i32 = self.heights[0..offset as usize].iter().sum();
+        let pattern_sum: i32 = self.heights[offset as usize..(offset + width) as usize]
+            .iter()
+            .sum();
+
+        let sum_mod: i32 = self.heights[offset as usize..(offset + count_mod) as usize]
+            .iter()
+            .sum();
+        offset_sum as u64 + (pattern_sum as u64 * count_div as u64) + sum_mod as u64
     }
 
     pub fn highest_height(&self) -> i32 {
@@ -184,11 +239,22 @@ impl World {
 pub fn find_tower_height(input: &Vec<char>) -> u64 {
     let mut world = World::new();
 
-    while world.rocks.len() < 2022 {
+    while world.pattern.is_none() && world.rocks.len() < 2022 {
         world.tick(&input);
     }
 
-    world.highest_height() as u64 + 1
+    world.sum_height_using_pattern(2022) as u64
+}
+
+#[aoc(day17, part2)]
+pub fn find_tower_height_2(input: &Vec<char>) -> u64 {
+    let mut world = World::new();
+
+    while world.pattern.is_none() {
+        world.tick(&input);
+    }
+
+    world.sum_height_using_pattern(1_000_000_000_000) as u64
 }
 
 #[cfg(test)]
