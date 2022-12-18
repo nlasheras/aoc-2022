@@ -30,15 +30,15 @@ impl Shape {
 
     pub fn points(&self) -> Vec<Point> {
         match self {
-            Shape::Flat => vec![(-1, 0), (0, 0), (1, 0), (2, 0)]
+            Shape::Flat => vec![(0, 0), (1, 0), (2, 0), (3, 0)]
                 .iter()
                 .map(|p| Point::new(p.0, p.1))
                 .collect(),
-            Shape::Plus => vec![(-1, 1), (0, 0), (0, 1), (0, 2), (1, 1)]
+            Shape::Plus => vec![(0, 1), (1, 0), (1, 1), (1, 2), (2, 1)]
                 .iter()
                 .map(|p| Point::new(p.0, p.1))
                 .collect(),
-            Shape::L => vec![(-1, 0), (0, 0), (1, 0), (1, 1), (1, 2)]
+            Shape::L => vec![(0, 0), (1, 0), (2, 0), (2, 1), (2, 2)]
                 .iter()
                 .map(|p| Point::new(p.0, p.1))
                 .collect(),
@@ -46,7 +46,7 @@ impl Shape {
                 .iter()
                 .map(|p| Point::new(p.0, p.1))
                 .collect(),
-            Shape::Square => vec![(0, 0), (1, 0), (0, 1), (1, 1)]
+            Shape::Square => vec![(0, 0), (0, 1), (1, 0), (1, 1)]
                 .iter()
                 .map(|p| Point::new(p.0, p.1))
                 .collect(),
@@ -67,44 +67,37 @@ impl Rock {
 
     pub fn bb(&self) -> (Point, Point) {
         match self.shape {
-            Shape::Flat => (self.pos - Point::new(1, 0), self.pos + Point::new(2, 0)),
-            Shape::Plus => (self.pos - Point::new(1, -2), self.pos + Point::new(1, 0)),
-            Shape::L => (self.pos - Point::new(1, -2), self.pos + Point::new(1, 0)),
+            Shape::Flat => (self.pos - Point::new(0, 0), self.pos + Point::new(3, 0)),
+            Shape::Plus => (self.pos - Point::new(0, -2), self.pos + Point::new(2, 0)),
+            Shape::L => (self.pos - Point::new(0, -2), self.pos + Point::new(2, 0)),
             Shape::Tall => (self.pos - Point::new(0, -3), self.pos + Point::new(0, 0)),
             Shape::Square => (self.pos - Point::new(0, -1), self.pos + Point::new(1, 0)),
         }
     }
 
-    fn between(point: &Point, min: &Point, max: &Point) -> bool {
-        // y is inverted since min = top-left
-        point.x >= min.x && point.x <= max.x && point.y <= min.y && point.y >= max.y
-    }
     pub fn collide(&self, other: &Rock) -> bool {
-        let bb = self.bb();
-        let bb2 = other.bb();
-        if Self::between(&bb2.0, &bb.0, &bb.1)
-            || Self::between(&bb2.1, &bb.0, &bb.1)
-            || Self::between(&bb.0, &bb2.0, &bb2.1)
-            || Self::between(&bb.1, &bb2.0, &bb2.1)
-        {
-            let p1 = self
-                .shape
-                .points()
-                .iter()
-                .map(|p| *p + self.pos)
-                .collect::<Vec<Point>>();
-            let p2 = other
-                .shape
-                .points()
-                .iter()
-                .map(|p| *p + other.pos)
-                .collect::<Vec<Point>>();
-            for p in p1 {
-                if p2.contains(&p) {
-                    return true;
-                }
+        if (self.pos.y - other.pos.y).abs() > 4 {
+            return false;
+        }
+        // todo: use the bb to speed up collide
+        let p1 = self
+            .shape
+            .points()
+            .iter()
+            .map(|p| *p + self.pos)
+            .collect::<Vec<Point>>();
+        let p2 = other
+            .shape
+            .points()
+            .iter()
+            .map(|p| *p + other.pos)
+            .collect::<Vec<Point>>();
+        for p in p1 {
+            if p2.contains(&p) {
+                return true;
             }
         }
+
         false
     }
 }
@@ -132,11 +125,11 @@ impl World {
 
     pub fn tick(&mut self, streams: &Vec<char>) -> bool {
         if self.falling.is_none() {
-            let mut pos = Point::new(3, self.highest_height() + 4);
-            if self.next_shape == Shape::Square || self.next_shape == Shape::Tall {
-                pos.x -= 1;
-            }
+            let mut pos = Point::new(2, self.highest_height() + 4);
             self.falling = Some(Rock::new(pos, self.next_shape.clone()));
+            if self.rocks.len() <= 11 {
+                println!("Spawning rock at {:?}", self.falling.unwrap());
+            }
             self.next_shape = self.next_shape.next();
         }
 
@@ -160,6 +153,9 @@ impl World {
         let downward = Rock::new(rock.pos + Point::new(0, -1), rock.shape);
         if self.collide(&downward) || downward.bb().1.y == -1 {
             // resting
+            if self.rocks.len() <= 10 {
+                println!("Resting at {:?}", rock);
+            }
             self.rocks.push(rock);
             self.falling = None;
             return true;
@@ -186,6 +182,7 @@ pub fn find_tower_height(input: &Vec<char>) -> u64 {
         }
     }
 
+    println!("{:?}", world.rocks.iter().last().unwrap());
     world.highest_height() as u64
 }
 
@@ -237,7 +234,7 @@ mod tests {
     #[test]
     fn test_day17_collide5() {
         let tall = Rock::new(Point::new(3, 0), Shape::Tall);
-        let lshape = Rock::new(Point::new(1, 0), Shape::L);
+        let lshape = Rock::new(Point::new(0, 0), Shape::L);
         assert_eq!(tall.collide(&lshape), false);
         assert_eq!(lshape.collide(&tall), false);
     }
@@ -262,7 +259,23 @@ mod tests {
     fn test_day17_collide8() {
         let plus = Rock::new(Point::new(1, 2), Shape::Plus);
         let square = Rock::new(Point::new(0, 1), Shape::Square);
-        assert_eq!(plus.collide(&square), true);
-        assert_eq!(square.collide(&plus), true);
+        assert_eq!(plus.collide(&square), false);
+        assert_eq!(square.collide(&plus), false);
+    }
+
+    #[test]
+    fn test_day17_collide9() {
+        let plus = Rock::new(Point::new(2, 10), Shape::Plus);
+        let lshape = Rock::new(Point::new(4, 12), Shape::L);
+        assert_eq!(plus.collide(&lshape), false);
+        assert_eq!(lshape.collide(&plus), false);
+    }
+
+    #[test]
+    fn test_day17_collide10() {
+        let plus = Rock::new(Point::new(2, 10), Shape::Plus);
+        let lshape = Rock::new(Point::new(4, 11), Shape::L);
+        assert_eq!(plus.collide(&lshape), true);
+        assert_eq!(lshape.collide(&plus), true);
     }
 }
