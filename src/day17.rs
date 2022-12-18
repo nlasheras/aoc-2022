@@ -75,23 +75,17 @@ impl Rock {
         }
     }
 
+    pub fn points(&self) -> Vec<Point> {
+        self.shape.points().iter().map(|p| *p + self.pos).collect()
+    }
+
     pub fn collide(&self, other: &Rock) -> bool {
         if (self.pos.y - other.pos.y).abs() > 4 {
             return false;
         }
         // todo: use the bb to speed up collide
-        let p1 = self
-            .shape
-            .points()
-            .iter()
-            .map(|p| *p + self.pos)
-            .collect::<Vec<Point>>();
-        let p2 = other
-            .shape
-            .points()
-            .iter()
-            .map(|p| *p + other.pos)
-            .collect::<Vec<Point>>();
+        let p1 = self.points();
+        let p2 = other.points();
         for p in p1 {
             if p2.contains(&p) {
                 return true;
@@ -120,16 +114,13 @@ impl World {
     }
 
     fn collide(&self, rock: &Rock) -> bool {
-        self.rocks.iter().any(|r| r.collide(&rock))
+        self.rocks.iter().rev().any(|r| r.collide(&rock))
     }
 
     pub fn tick(&mut self, streams: &Vec<char>) -> bool {
         if self.falling.is_none() {
-            let mut pos = Point::new(2, self.highest_height() + 4);
+            let pos = Point::new(2, self.highest_height() + 1 + 3);
             self.falling = Some(Rock::new(pos, self.next_shape.clone()));
-            if self.rocks.len() <= 11 {
-                println!("Spawning rock at {:?}", self.falling.unwrap());
-            }
             self.next_shape = self.next_shape.next();
         }
 
@@ -153,9 +144,6 @@ impl World {
         let downward = Rock::new(rock.pos + Point::new(0, -1), rock.shape);
         if self.collide(&downward) || downward.bb().1.y == -1 {
             // resting
-            if self.rocks.len() <= 10 {
-                println!("Resting at {:?}", rock);
-            }
             self.rocks.push(rock);
             self.falling = None;
             return true;
@@ -170,20 +158,37 @@ impl World {
             .iter()
             .fold(-1, |accum, r| cmp::max(accum, r.bb().0.y))
     }
+
+    #[allow(dead_code)]
+    fn render(&self, height: i32) -> String {
+        let mut buf = "".to_string();
+        for ry in 0..height {
+            let y = height - ry - 1;
+            for x in 0..7 {
+                let p = Point::new(x, y);
+                if self.rocks.iter().any(|r| r.points().contains(&p)) {
+                    buf.push('#');
+                } else if self.falling.is_some() && self.falling.unwrap().points().contains(&p) {
+                    buf.push('@');
+                } else {
+                    buf.push('.');
+                }
+            }
+            buf.push('\n');
+        }
+        return buf;
+    }
 }
+
 #[aoc(day17, part1)]
 pub fn find_tower_height(input: &Vec<char>) -> u64 {
-    let mut count = 2022;
     let mut world = World::new();
 
-    while count >= 0 {
-        if world.tick(&input) {
-            count -= 1;
-        }
+    while world.rocks.len() < 2022 {
+        world.tick(&input);
     }
 
-    println!("{:?}", world.rocks.iter().last().unwrap());
-    world.highest_height() as u64
+    world.highest_height() as u64 + 1
 }
 
 #[cfg(test)]
