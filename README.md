@@ -76,3 +76,11 @@ I was traveling today, so I couldn't invest much time on this. I squeezed some t
 ### Day 18
 
 This one was a very welcome easier one. When reading the puzzle I was expecting to have to figure out some smart spatial organization to query the cubes efficiently. But when looking at the input, with just a bit more than 2800 cubes it was enough to use a `BTreeSet`. 
+
+### Day 19
+
+My naive DFS simulation managed to get the answer for part 1, but proved unamanageable for part 2. I had to make it based on the "next robot to build" and still work out some culling of the solution space to get the answer in reasonable time (I'll leave it at 33secs until the end of the event).
+
+### Day 20
+
+For this one I had to fiddle a bit with part 2, until I realized that it's specified that the numbers have to be moved always in the order from the input. One cleanup I have pending is checking that the numbers are unique and I probably can avoid using the struct for them. 

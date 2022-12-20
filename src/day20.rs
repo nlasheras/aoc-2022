@@ -20,10 +20,16 @@ pub fn parse_input(input: &str) -> Vec<Number> {
 
 fn mix(input: &Vec<Number>) -> Vec<Number> {
     let mut mixed = input.clone();
-    for n in input {
+
+    for i in 0..input.len() {
+        let n = mixed.iter().find(|n| n.index == i).unwrap();
+        if n.n == 0 {
+            continue;
+        }
         let pos = mixed.iter().position(|n2| n2.index == n.index).unwrap();
         let elem = mixed.remove(pos);
         let mut new_index = (pos as i64 + elem.n).rem_euclid(mixed.len() as i64);
+        new_index = new_index.rem_euclid(mixed.len() as i64);
         if new_index == 0 {
             new_index = mixed.len() as i64;
         }
@@ -73,9 +79,43 @@ mod tests {
 4";
 
     #[test]
-    fn test_day20_decrypt() {
+    fn test_day20_part1() {
         let input = parse_input(DAY20_EXAMPLE);
         assert_eq!(decrypt_sum_3(&input), 3);
+    }
+
+    #[test]
+    fn test_day20_mix() {
+        let input = parse_input(DAY20_EXAMPLE);
+        let mixed = mix(&input);
+        let tmp = mixed.iter().map(|n| n.n).collect::<Vec<i64>>();
+        assert_eq!(tmp, [1, 2, -3, 4, 0, 3, -2]);
+    }
+
+    #[test]
+    fn test_day20_mix_multiplied() {
+        let input = parse_input(DAY20_EXAMPLE);
+        let decrypted = input
+            .iter()
+            .map(|num| Number {
+                n: num.n * 811589153,
+                index: num.index,
+            })
+            .collect::<Vec<Number>>();
+        let mixed_1 = mix(&decrypted);
+        let tmp = mixed_1.iter().map(|n| n.n).collect::<Vec<i64>>();
+        assert_eq!(
+            tmp,
+            [
+                0,
+                -2434767459,
+                3246356612,
+                -1623178306,
+                2434767459,
+                1623178306,
+                811589153
+            ]
+        );
     }
 
     #[test]
