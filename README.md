@@ -83,4 +83,4 @@ My naive DFS simulation managed to get the answer for part 1, but proved unamana
 
 ### Day 20
 
-For this one I had to fiddle a bit with part 2, until I realized that it's specified that the numbers have to be moved always in the order from the input. One cleanup I have pending is checking that the numbers are unique and I probably can avoid using the struct for them. 
+For this one I had to fiddle a bit with part 2, until I realized that it's specified that the numbers have to be moved always in the order from the input.
