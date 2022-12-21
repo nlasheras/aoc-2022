@@ -82,8 +82,8 @@ fn has_monkey(input: &Monkeys, root: &str, key: &str) -> bool {
 pub fn get_human(input: &Monkeys) -> i64 {
     let root = &input["root"];
     let (a, b) = root.branches();
-    let mut value = 0;
-    let mut branch = a;
+    let mut value;
+    let mut branch;
     if has_monkey(input, a, "humn") {
         value = get_monkey(input, b);
         branch = a;
@@ -100,7 +100,7 @@ pub fn get_human(input: &Monkeys) -> i64 {
             | Monkey::Sub(k1, k2)
             | Monkey::Mul(k1, k2)
             | Monkey::Div(k1, k2) => {
-                let mut branch_value = 0;
+                let branch_value;
                 if has_monkey(input, k1, "humn") {
                     branch = k1;
                     branch_value = get_monkey(input, k2);

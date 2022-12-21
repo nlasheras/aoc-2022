@@ -84,3 +84,7 @@ My naive DFS simulation managed to get the answer for part 1, but proved unamana
 ### Day 20
 
 For this one I had to fiddle a bit with part 2, until I realized that it's specified that the numbers have to be moved always in the order from the input.
+
+### Day 21
+
+Quite straightforward problem. Maybe something that I would like to cleanup is maybe cleanup the `match` expressions a bit. I have many places where I have to match against the 5 values of the enum and I'm thinking it could look cleaner if I store the operation as another enum type. 
