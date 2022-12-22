@@ -164,6 +164,35 @@ impl CubeNet {
             connections: connections,
         }
     }
+    
+    pub fn input() -> CubeNet {
+        let mut connections = HashMap::new();
+        connections.insert((1, (0, -1)), (4, (1, 0)));
+        connections.insert((1, (-1, 0)), (6, (1, 0)));
+
+        connections.insert((2, (0, -1)), (6, (0, -1)));
+        connections.insert((2, (1, 0)), (5, (-1, 0)));
+        connections.insert((2, (0, 1)), (3, (-1, 0)));
+
+        connections.insert((3, (1, 0)), (2, (0, -1)));
+        connections.insert((3, (-1, 0)), (4, (0, 1)));
+
+        connections.insert((4, (0, -1)), (3, (1, 0)));
+        connections.insert((4, (-1, 0)), (1, (1, 0)));
+
+        connections.insert((5, (1, 0)), (2, (-1, 0)));
+        connections.insert((5, (0, 1)), (6, (-1, 0)));
+
+        connections.insert((6, (1, 0)), (5, (0, -1)));
+        connections.insert((6, (-1, 0)), (1, (0, 1)));
+        connections.insert((6, (0, 1)), (2, (0, 1)));
+
+        CubeNet {
+            size: (50, 50),
+            cells: vec![0, 1, 2, 0, 0, 3, 0, 0, 4, 5, 0, 0, 6, 0, 0, 0],
+            connections: connections,
+        }
+    }
 
     fn get_cube(&self, cube: i32) -> (i32, i32) {
         for y in 0..4 {
@@ -186,17 +215,22 @@ impl CubeNet {
 
     fn get_cube_with_facing(&self, x: i32, y: i32, facing: (i32, i32)) -> (i32, (i32, i32)) {
         let cube = self.cube_at(x, y).unwrap();
-        *self.connections.get(&(cube, facing)).unwrap()
+        println!("get_cube_with_facing({}, {:?})", cube, facing);
+        let (a,b) = *self.connections.get(&(cube, facing)).unwrap();
+        println!("    {:?} {:?}", a, b);
+        (a, b)
     }
 
     fn fold_pos(&self, pos: (i32, i32, i32), facing: (i32, i32)) -> (i32, i32, i32) {
-        match facing {
+        let p = match facing {
             (1, 0) => (0, pos.0, pos.2),
             (-1, 0) => (self.size.0 - 1, self.size.1 - 1 - pos.0, pos.2),
             (0, 1) => (self.size.0 - 1 - pos.1, 0, pos.2),
             (0, -1) => (self.size.0 - 1 - pos.0, self.size.1 - 1, pos.2),
             _ => todo!(),
-        }
+        };
+        println!("  fold pos({:?})= {:?}", pos, p);
+        p
     }
 
     fn move_to_other_face(
@@ -273,10 +307,11 @@ fn move_with_cube(
 #[aoc(day22, part2)]
 pub fn get_password_with_cube(input: &Input) -> i64 {
     let (map, path) = input;
-    let cube = CubeNet::example();
+    let cube = if map.size().0 == 150 { CubeNet::input() } else { CubeNet::example() };
     let start_cube = 1; // todo!
     let mut state = ((0, 0, start_cube), (1, 0)); // facing right
     for movement in path.iter() {
+        println!("Move {:?} at {:?}", movement, state);
         match movement {
             Move::Right | Move::Left => state.1 = rotate(state.1, movement),
             Move::Number(n) => state = move_with_cube(map, &cube, state.0, *n, state.1),
