@@ -88,3 +88,7 @@ For this one I had to fiddle a bit with part 2, until I realized that it's speci
 ### Day 21
 
 Quite straightforward problem. Maybe something that I would like to cleanup is maybe cleanup the `match` expressions a bit. I have many places where I have to match against the 5 values of the enum and I'm thinking it could look cleaner if I store the operation as another enum type. 
+
+### Day 22
+
+Part 1 was relatively easy. Part two ramps up a lot. I wasn't able to finish it before the end of day. Will keep working on it when I have some more time.

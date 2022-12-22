@@ -164,7 +164,7 @@ impl CubeNet {
             connections: connections,
         }
     }
-    
+
     pub fn input() -> CubeNet {
         let mut connections = HashMap::new();
         connections.insert((1, (0, -1)), (4, (1, 0)));
@@ -216,7 +216,7 @@ impl CubeNet {
     fn get_cube_with_facing(&self, x: i32, y: i32, facing: (i32, i32)) -> (i32, (i32, i32)) {
         let cube = self.cube_at(x, y).unwrap();
         println!("get_cube_with_facing({}, {:?})", cube, facing);
-        let (a,b) = *self.connections.get(&(cube, facing)).unwrap();
+        let (a, b) = *self.connections.get(&(cube, facing)).unwrap();
         println!("    {:?} {:?}", a, b);
         (a, b)
     }
@@ -307,7 +307,11 @@ fn move_with_cube(
 #[aoc(day22, part2)]
 pub fn get_password_with_cube(input: &Input) -> i64 {
     let (map, path) = input;
-    let cube = if map.size().0 == 150 { CubeNet::input() } else { CubeNet::example() };
+    let cube = if map.size().0 == 150 {
+        CubeNet::input()
+    } else {
+        CubeNet::example()
+    };
     let start_cube = 1; // todo!
     let mut state = ((0, 0, start_cube), (1, 0)); // facing right
     for movement in path.iter() {
