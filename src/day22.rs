@@ -138,8 +138,26 @@ struct CubeNet {
 impl CubeNet {
     pub fn example() -> CubeNet {
         let mut connections = HashMap::new();
+        connections.insert((1, (0, -1)), (2, (0, 1)));
+        connections.insert((1, (-1, 0)), (3, (0, 1)));
+        connections.insert((1, (1, 0)), (6, (-1, 0)));
+
+        connections.insert((2, (-1, 0)), (6, (0, -1)));
+        connections.insert((2, (0, -1)), (1, (0, 1)));
+        connections.insert((2, (0, 1)), (5, (-1, 0)));
+
+        connections.insert((3, (0, -1)), (1, (1, 0)));
+        connections.insert((3, (0, 1)), (5, (1, 0)));
+
         connections.insert((4, (1, 0)), (6, (0, 1)));
+
+        connections.insert((5, (-1, 0)), (3, (0, -1)));
         connections.insert((5, (0, 1)), (2, (0, -1)));
+
+        connections.insert((6, (1, 0)), (1, (-1, 0)));
+        connections.insert((6, (0, -1)), (4, (-1, 0)));
+        connections.insert((6, (0, 1)), (2, (1, 0)));
+
         CubeNet {
             size: (4, 4),
             cells: vec![0, 0, 1, 0, 2, 3, 4, 0, 0, 0, 5, 6, 0, 0, 0, 0],
@@ -168,14 +186,12 @@ impl CubeNet {
 
     fn get_cube_with_facing(&self, x: i32, y: i32, facing: (i32, i32)) -> (i32, (i32, i32)) {
         let cube = self.cube_at(x, y).unwrap();
-        println!("get_cube_with_facing({}, {:?})", cube, facing);
         *self.connections.get(&(cube, facing)).unwrap()
     }
 
     fn fold_pos(&self, pos: (i32, i32, i32), facing: (i32, i32)) -> (i32, i32, i32) {
-        let mut new_pos = pos.clone();
         match facing {
-            (1, 0) => (0, self.size.1 - 1 - pos.0, pos.2),
+            (1, 0) => (0, pos.0, pos.2),
             (-1, 0) => (self.size.0 - 1, self.size.1 - 1 - pos.0, pos.2),
             (0, 1) => (self.size.0 - 1 - pos.1, 0, pos.2),
             (0, -1) => (self.size.0 - 1 - pos.0, self.size.1 - 1, pos.2),
@@ -227,6 +243,58 @@ impl CubeNet {
     }
 }
 
+fn move_with_cube(
+    map: &Grid<char>,
+    cube: &CubeNet,
+    pos: (i32, i32, i32),
+    n: u32,
+    facing: (i32, i32),
+) -> ((i32, i32, i32), (i32, i32)) {
+    let mut new_pos = pos.clone();
+    let mut new_facing = facing.clone();
+    for _ in 0..n {
+        let (candidate, candidate_facing) = cube.move_in_cube(new_pos, new_facing);
+        let (cube_x, cube_y) = cube.get_cube(candidate.2);
+        let c = map
+            .cell_at(
+                candidate.0 + cube_x * cube.size.0,
+                candidate.1 + cube_y * cube.size.1,
+            )
+            .unwrap();
+        if c == '#' {
+            break;
+        }
+        new_pos = candidate;
+        new_facing = candidate_facing;
+    }
+    (new_pos, new_facing)
+}
+
+#[aoc(day22, part2)]
+pub fn get_password_with_cube(input: &Input) -> i64 {
+    let (map, path) = input;
+    let cube = CubeNet::example();
+    let start_cube = 1; // todo!
+    let mut state = ((0, 0, start_cube), (1, 0)); // facing right
+    for movement in path.iter() {
+        match movement {
+            Move::Right | Move::Left => state.1 = rotate(state.1, movement),
+            Move::Number(n) => state = move_with_cube(map, &cube, state.0, *n, state.1),
+        }
+    }
+    let facing_value = match state.1 {
+        (1, 0) => 0,
+        (0, 1) => 1,
+        (-1, 0) => 2,
+        (0, -1) => 3,
+        _ => panic!("Shouldn't happen"),
+    };
+    let (cube_x, cube_y) = cube.get_cube(state.0 .2);
+    let col = state.0 .0 + 4 * cube_x;
+    let row = state.0 .1 + 4 * cube_y;
+    ((row + 1) * 1000 + (col + 1) * 4 + facing_value) as i64
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -274,5 +342,19 @@ mod tests {
         let (pos, facing) = cube.move_in_cube((2, 3, 5), (0, 1));
         assert_eq!(facing, (0, -1));
         assert_eq!(pos, (1, 3, 2));
+    }
+
+    #[test]
+    fn test_day22_cube_example_end() {
+        let cube = CubeNet::example();
+        let (pos, facing) = cube.move_in_cube((2, 0, 3), (0, -1));
+        assert_eq!(facing, (1, 0));
+        assert_eq!(pos, (0, 2, 1));
+    }
+
+    #[test]
+    fn test_day22_part2() {
+        let input = parse_input(DAY22_EXAMPLE);
+        assert_eq!(get_password_with_cube(&input), 5031);
     }
 }
