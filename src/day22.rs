@@ -291,21 +291,28 @@ impl CubeNet<'_> {
         (a, b)
     }
 
-    fn fold_pos(&self, pos: &Point, facing: &Facing) -> Point {
-        let p = match facing {
-            Facing::Right => Point::new_3d(0, pos.x, pos.z),
-            Facing::Left => Point::new_3d(self.size.0 - 1, self.size.1 - 1 - pos.x, pos.z),
-            Facing::Down => Point::new_3d(self.size.0 - 1 - pos.y, 0, pos.z),
-            Facing::Up => Point::new_3d(self.size.0 - 1 - pos.x, self.size.1 - 1, pos.z),
+    fn translate_pos(&self, pos: &Point, old_facing: &Facing, new_facing: &Facing) -> Point {
+        let (width, height) = self.size;
+        let relative = match old_facing {
+            Facing::Right => pos.y,
+            Facing::Left => height - 1 - pos.y,
+            Facing::Down => width - 1 - pos.x,
+            Facing::Up => pos.x,
         };
-        println!("  fold pos({:?})= {:?}", pos, p);
-        p
+        let new_pos = match new_facing {
+            Facing::Right => Point::new_3d(0, relative, pos.z),
+            Facing::Left => Point::new_3d(width - 1, height - 1 - relative, pos.z),
+            Facing::Down => Point::new_3d(width - 1 - relative, 0, pos.z),
+            Facing::Up => Point::new_3d(relative, height - 1, pos.z),
+        };
+        println!("  translate_pos({:?})= {:?}", pos, new_pos);
+        new_pos
     }
 
     fn move_to_other_face(&self, pos: &Point, facing: &Facing) -> (Point, Facing) {
         let (cube_x, cube_y) = self.get_cube(pos.z);
 
-        let mut new_pos = pos.clone();
+        let mut new_pos = *pos + facing.as_vector();
         if new_pos.x < 0 {
             new_pos.x = self.size.0 - 1;
         } else if new_pos.x >= self.size.0 {
@@ -325,7 +332,7 @@ impl CubeNet<'_> {
         } else {
             let (cube, new_facing) = self.get_cube_with_facing(cube_x, cube_y, facing);
             new_pos.z = cube;
-            (self.fold_pos(&new_pos, &new_facing), new_facing)
+            (self.translate_pos(&new_pos, facing, &new_facing), new_facing)
         }
     }
 }
@@ -344,7 +351,7 @@ impl WrapLogic for CubeNet<'_> {
             return (new_pos, *facing); // moving inside the same face
         }
 
-        self.move_to_other_face(&new_pos, facing)
+        self.move_to_other_face(pos, facing)
     }
 }
 
