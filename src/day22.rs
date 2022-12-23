@@ -13,7 +13,7 @@ pub enum Move {
     Left,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Facing {
     Right = 0,
     Down = 1,
@@ -104,17 +104,9 @@ pub fn parse_input(input: &str) -> Input {
     (parse_map(parts[0]), parse_path(parts[1]))
 }
 
-fn rotate(facing: (i32, i32), direction: &Move) -> (i32, i32) {
-    match direction {
-        Move::Right => (-facing.1, facing.0),
-        Move::Left => (facing.1, -facing.0),
-        _ => panic!("Wrong facing"),
-    }
-}
-
 trait WrapLogic {
     fn cell_at(&self, pos: &Point) -> Option<char>;
-    fn move_point(&self, pos: &Point, facing: &Facing) -> Point;
+    fn move_point(&self, pos: &Point, facing: &Facing) -> (Point, Facing);
 }
 
 pub struct SimpleWraparound<'a> {
@@ -144,7 +136,7 @@ impl WrapLogic for SimpleWraparound<'_> {
         self.map.cell_at(pos.x, pos.y)
     }
 
-    fn move_point(&self, pos: &Point, facing: &Facing) -> Point {
+    fn move_point(&self, pos: &Point, facing: &Facing) -> (Point, Facing) {
         let mut candidate = *pos + facing.as_vector();
         let (width, height) = self.map.size();
 
@@ -160,17 +152,17 @@ impl WrapLogic for SimpleWraparound<'_> {
         if c == ' ' {
             candidate = self.wraparound(&candidate, facing);
         }
-        candidate
+        (candidate, *facing)
     }
 }
 
-fn move_in_map(map: &dyn WrapLogic, pos: &Point, facing: &Facing) -> Point {
-    let candidate = map.move_point(pos, facing);
-    let c = map.cell_at(&candidate).unwrap();
+fn move_in_map(map: &dyn WrapLogic, pos: &Point, facing: &Facing) -> (Point, Facing) {
+    let (new_pos, new_facing) = map.move_point(pos, facing);
+    let c = map.cell_at(&new_pos).unwrap();
     if c == '#' {
-        return *pos;
+        return (*pos, *facing);
     }
-    candidate
+    (new_pos, new_facing)
 }
 
 fn follow_path(
@@ -186,7 +178,7 @@ fn follow_path(
             Move::Left => state.1 = state.1.rotate_ccw(),
             Move::Number(n) => {
                 for _ in 0..*n {
-                    state.0 = move_in_map(map, &state.0, &state.1)
+                    state = move_in_map(map, &state.0, &state.1)
                 }
             }
         }
@@ -204,68 +196,71 @@ pub fn get_password(input: &Input) -> i64 {
     ((end.0.y + 1) * 1000 + (end.0.x + 1) * 4 + facing_value) as i64
 }
 
-struct CubeNet {
+struct CubeNet<'a> {
     pub size: (i32, i32),
     pub cells: Vec<i32>,
-    connections: HashMap<(i32, (i32, i32)), (i32, (i32, i32))>,
+    connections: HashMap<(i32, Facing), (i32, Facing)>,
+    pub map: &'a Grid<char>,
 }
 
-impl CubeNet {
-    pub fn example() -> CubeNet {
+impl CubeNet<'_> {
+    pub fn example(map: &Grid<char>) -> CubeNet {
         let mut connections = HashMap::new();
-        connections.insert((1, (0, -1)), (2, (0, 1)));
-        connections.insert((1, (-1, 0)), (3, (0, 1)));
-        connections.insert((1, (1, 0)), (6, (-1, 0)));
+        connections.insert((1, Facing::Up), (2, Facing::Down));
+        connections.insert((1, Facing::Left), (3, Facing::Down));
+        connections.insert((1, Facing::Right), (6, Facing::Left));
 
-        connections.insert((2, (-1, 0)), (6, (0, -1)));
-        connections.insert((2, (0, -1)), (1, (0, 1)));
-        connections.insert((2, (0, 1)), (5, (-1, 0)));
+        connections.insert((2, Facing::Left), (6, Facing::Up));
+        connections.insert((2, Facing::Up), (1, Facing::Down));
+        connections.insert((2, Facing::Down), (5, Facing::Left));
 
-        connections.insert((3, (0, -1)), (1, (1, 0)));
-        connections.insert((3, (0, 1)), (5, (1, 0)));
+        connections.insert((3, Facing::Up), (1, Facing::Right));
+        connections.insert((3, Facing::Down), (5, Facing::Right));
 
-        connections.insert((4, (1, 0)), (6, (0, 1)));
+        connections.insert((4, Facing::Right), (6, Facing::Down));
 
-        connections.insert((5, (-1, 0)), (3, (0, -1)));
-        connections.insert((5, (0, 1)), (2, (0, -1)));
+        connections.insert((5, Facing::Left), (3, Facing::Up));
+        connections.insert((5, Facing::Down), (2, Facing::Up));
 
-        connections.insert((6, (1, 0)), (1, (-1, 0)));
-        connections.insert((6, (0, -1)), (4, (-1, 0)));
-        connections.insert((6, (0, 1)), (2, (1, 0)));
+        connections.insert((6, Facing::Right), (1, Facing::Left));
+        connections.insert((6, Facing::Up), (4, Facing::Left));
+        connections.insert((6, Facing::Down), (2, Facing::Right));
 
         CubeNet {
             size: (4, 4),
             cells: vec![0, 0, 1, 0, 2, 3, 4, 0, 0, 0, 5, 6, 0, 0, 0, 0],
             connections: connections,
+            map: map,
         }
     }
 
-    pub fn input() -> CubeNet {
+    pub fn input(map: &Grid<char>) -> CubeNet {
         let mut connections = HashMap::new();
-        connections.insert((1, (0, -1)), (4, (1, 0)));
-        connections.insert((1, (-1, 0)), (6, (1, 0)));
+        connections.insert((1, Facing::Up), (4, Facing::Right));
+        connections.insert((1, Facing::Left), (6, Facing::Right));
 
-        connections.insert((2, (0, -1)), (6, (0, -1)));
-        connections.insert((2, (1, 0)), (5, (-1, 0)));
-        connections.insert((2, (0, 1)), (3, (-1, 0)));
+        connections.insert((2, Facing::Up), (6, Facing::Up));
+        connections.insert((2, Facing::Right), (5, Facing::Left));
+        connections.insert((2, Facing::Down), (3, Facing::Left));
 
-        connections.insert((3, (1, 0)), (2, (0, -1)));
-        connections.insert((3, (-1, 0)), (4, (0, 1)));
+        connections.insert((3, Facing::Right), (2, Facing::Up));
+        connections.insert((3, Facing::Left), (4, Facing::Down));
 
-        connections.insert((4, (0, -1)), (3, (1, 0)));
-        connections.insert((4, (-1, 0)), (1, (1, 0)));
+        connections.insert((4, Facing::Up), (3, Facing::Right));
+        connections.insert((4, Facing::Left), (1, Facing::Right));
 
-        connections.insert((5, (1, 0)), (2, (-1, 0)));
-        connections.insert((5, (0, 1)), (6, (-1, 0)));
+        connections.insert((5, Facing::Right), (2, Facing::Left));
+        connections.insert((5, Facing::Down), (6, Facing::Left));
 
-        connections.insert((6, (1, 0)), (5, (0, -1)));
-        connections.insert((6, (-1, 0)), (1, (0, 1)));
-        connections.insert((6, (0, 1)), (2, (0, 1)));
+        connections.insert((6, Facing::Right), (5, Facing::Up));
+        connections.insert((6, Facing::Left), (1, Facing::Down));
+        connections.insert((6, Facing::Down), (2, Facing::Down));
 
         CubeNet {
             size: (50, 50),
             cells: vec![0, 1, 2, 0, 0, 3, 0, 0, 4, 5, 0, 0, 6, 0, 0, 0],
             connections: connections,
+            map: map,
         }
     }
 
@@ -288,124 +283,86 @@ impl CubeNet {
         None
     }
 
-    fn get_cube_with_facing(&self, x: i32, y: i32, facing: (i32, i32)) -> (i32, (i32, i32)) {
+    fn get_cube_with_facing(&self, x: i32, y: i32, facing: &Facing) -> (i32, Facing) {
         let cube = self.cube_at(x, y).unwrap();
         println!("get_cube_with_facing({}, {:?})", cube, facing);
-        let (a, b) = *self.connections.get(&(cube, facing)).unwrap();
+        let (a, b) = *self.connections.get(&(cube, *facing)).unwrap();
         println!("    {:?} {:?}", a, b);
         (a, b)
     }
 
-    fn fold_pos(&self, pos: (i32, i32, i32), facing: (i32, i32)) -> (i32, i32, i32) {
+    fn fold_pos(&self, pos: &Point, facing: &Facing) -> Point {
         let p = match facing {
-            (1, 0) => (0, pos.0, pos.2),
-            (-1, 0) => (self.size.0 - 1, self.size.1 - 1 - pos.0, pos.2),
-            (0, 1) => (self.size.0 - 1 - pos.1, 0, pos.2),
-            (0, -1) => (self.size.0 - 1 - pos.0, self.size.1 - 1, pos.2),
-            _ => todo!(),
+            Facing::Right => Point::new_3d(0, pos.x, pos.z),
+            Facing::Left => Point::new_3d(self.size.0 - 1, self.size.1 - 1 - pos.x, pos.z),
+            Facing::Down => Point::new_3d(self.size.0 - 1 - pos.y, 0, pos.z),
+            Facing::Up => Point::new_3d(self.size.0 - 1 - pos.x, self.size.1 - 1, pos.z),
         };
         println!("  fold pos({:?})= {:?}", pos, p);
         p
     }
 
-    fn move_to_other_face(
-        &self,
-        pos: (i32, i32, i32),
-        facing: (i32, i32),
-    ) -> ((i32, i32, i32), (i32, i32)) {
-        let (cube_x, cube_y) = self.get_cube(pos.2);
+    fn move_to_other_face(&self, pos: &Point, facing: &Facing) -> (Point, Facing) {
+        let (cube_x, cube_y) = self.get_cube(pos.z);
 
         let mut new_pos = pos.clone();
-        if new_pos.0 < 0 {
-            new_pos.0 = self.size.0 - 1;
-        } else if new_pos.0 >= self.size.0 {
-            new_pos.0 = 0;
+        if new_pos.x < 0 {
+            new_pos.x = self.size.0 - 1;
+        } else if new_pos.x >= self.size.0 {
+            new_pos.x = 0;
         }
-        if new_pos.1 < 0 {
-            new_pos.1 = self.size.1 - 1;
+        if new_pos.y < 0 {
+            new_pos.y = self.size.1 - 1;
         }
-        if new_pos.1 >= self.size.1 {
-            new_pos.1 = 0
+        if new_pos.y >= self.size.1 {
+            new_pos.y = 0
         }
 
-        if let Some(cube) = self.cube_at(cube_x + facing.0, cube_y + facing.1) {
-            new_pos.2 = cube;
-            return (new_pos, facing);
+        let dir = facing.as_vector();
+        if let Some(cube) = self.cube_at(cube_x + dir.x, cube_y + dir.y) {
+            new_pos.z = cube;
+            return (new_pos, *facing);
         } else {
             let (cube, new_facing) = self.get_cube_with_facing(cube_x, cube_y, facing);
-            new_pos.2 = cube;
-            (self.fold_pos(new_pos, new_facing), new_facing)
+            new_pos.z = cube;
+            (self.fold_pos(&new_pos, &new_facing), new_facing)
         }
-    }
-
-    pub fn move_in_cube(
-        &self,
-        pos: (i32, i32, i32),
-        facing: (i32, i32),
-    ) -> ((i32, i32, i32), (i32, i32)) {
-        let new_pos = (pos.0 + facing.0, pos.1 + facing.1, pos.2);
-        if new_pos.0 >= 0 && new_pos.0 < self.size.0 && new_pos.1 >= 0 && new_pos.1 < self.size.1 {
-            return (new_pos, facing); // moving inside the same face
-        }
-
-        self.move_to_other_face(new_pos, facing)
     }
 }
 
-fn move_with_cube(
-    map: &Grid<char>,
-    cube: &CubeNet,
-    pos: (i32, i32, i32),
-    n: u32,
-    facing: (i32, i32),
-) -> ((i32, i32, i32), (i32, i32)) {
-    let mut new_pos = pos.clone();
-    let mut new_facing = facing.clone();
-    for _ in 0..n {
-        let (candidate, candidate_facing) = cube.move_in_cube(new_pos, new_facing);
-        let (cube_x, cube_y) = cube.get_cube(candidate.2);
-        let c = map
-            .cell_at(
-                candidate.0 + cube_x * cube.size.0,
-                candidate.1 + cube_y * cube.size.1,
-            )
-            .unwrap();
-        if c == '#' {
-            break;
-        }
-        new_pos = candidate;
-        new_facing = candidate_facing;
+impl WrapLogic for CubeNet<'_> {
+    fn cell_at(&self, pos: &Point) -> Option<char> {
+        let col = pos.x + 4 * self.size.0;
+        let row = pos.y + 4 * self.size.1;
+        self.map.cell_at(col, row)
     }
-    (new_pos, new_facing)
+
+    fn move_point(&self, pos: &Point, facing: &Facing) -> (Point, Facing) {
+        let new_pos = *pos + facing.as_vector();
+        if new_pos.x >= 0 && new_pos.x < self.size.0 && new_pos.y >= 0 && new_pos.y < self.size.1 {
+            return (new_pos, *facing); // moving inside the same face
+        }
+
+        self.move_to_other_face(&new_pos, facing)
+    }
 }
 
 #[aoc(day22, part2)]
 pub fn get_password_with_cube(input: &Input) -> i64 {
     let (map, path) = input;
     let cube = if map.size().0 == 150 {
-        CubeNet::input()
+        CubeNet::input(map)
     } else {
-        CubeNet::example()
+        CubeNet::example(map)
     };
     let start_cube = 1; // todo!
-    let mut state = ((0, 0, start_cube), (1, 0)); // facing right
-    for movement in path.iter() {
-        println!("Move {:?} at {:?}", movement, state);
-        match movement {
-            Move::Right | Move::Left => state.1 = rotate(state.1, movement),
-            Move::Number(n) => state = move_with_cube(map, &cube, state.0, *n, state.1),
-        }
-    }
-    let facing_value = match state.1 {
-        (1, 0) => 0,
-        (0, 1) => 1,
-        (-1, 0) => 2,
-        (0, -1) => 3,
-        _ => panic!("Shouldn't happen"),
-    };
-    let (cube_x, cube_y) = cube.get_cube(state.0 .2);
-    let col = state.0 .0 + 4 * cube_x;
-    let row = state.0 .1 + 4 * cube_y;
+    let start = (Point::new_3d(0, 0, start_cube), Facing::Right);
+    let end = follow_path(&cube, path, &start.0, &start.1);
+
+    let facing_value = end.1 as i32;
+    let (cube_x, cube_y) = cube.get_cube(end.0.z);
+    let col = end.0.x + 4 * cube_x;
+    let row = end.0.y + 4 * cube_y;
     ((row + 1) * 1000 + (col + 1) * 4 + facing_value) as i64
 }
 
@@ -436,36 +393,41 @@ mod tests {
 
     #[test]
     fn test_day22_cube_simple_move() {
-        let cube = CubeNet::example();
-        let (pos, facing) = cube.move_in_cube((3, 1, 3), (1, 0));
-        assert_eq!(facing, (1, 0));
-        assert_eq!(pos, (0, 1, 4));
+        let input = parse_input(DAY22_EXAMPLE);
+        let cube = CubeNet::example(&input.0);
+        let (pos, facing) = cube.move_point(&Point::new_3d(3, 1, 3), &Facing::Right);
+        assert_eq!(facing, Facing::Right);
+        assert_eq!(pos, Point::new_3d(0, 1, 4));
     }
 
     #[test]
     fn test_day22_cube_example_ab() {
-        let cube = CubeNet::example();
-        let (pos, facing) = cube.move_in_cube((3, 1, 4), (1, 0));
-        assert_eq!(facing, (0, 1));
-        assert_eq!(pos, (2, 0, 6));
+        let input = parse_input(DAY22_EXAMPLE);
+        let cube = CubeNet::example(&input.0);
+        let (pos, facing) = cube.move_point(&Point::new_3d(3, 1, 4), &Facing::Right);
+        assert_eq!(facing, Facing::Down);
+        assert_eq!(pos, Point::new_3d(2, 0, 6));
     }
 
     #[test]
     fn test_day22_cube_example_cd() {
-        let cube = CubeNet::example();
-        let (pos, facing) = cube.move_in_cube((2, 3, 5), (0, 1));
-        assert_eq!(facing, (0, -1));
-        assert_eq!(pos, (1, 3, 2));
+        let input = parse_input(DAY22_EXAMPLE);
+        let cube = CubeNet::example(&input.0);
+        let (pos, facing) = cube.move_point(&Point::new_3d(2, 3, 5), &Facing::Down);
+        assert_eq!(facing, Facing::Up);
+        assert_eq!(pos, Point::new_3d(1, 3, 2));
     }
 
     #[test]
     fn test_day22_cube_example_end() {
-        let cube = CubeNet::example();
-        let (pos, facing) = cube.move_in_cube((2, 0, 3), (0, -1));
-        assert_eq!(facing, (1, 0));
-        assert_eq!(pos, (0, 2, 1));
+        let input = parse_input(DAY22_EXAMPLE);
+        let cube = CubeNet::example(&input.0);
+        let (pos, facing) = cube.move_point(&Point::new_3d(2, 0, 3), &Facing::Up);
+        assert_eq!(facing, Facing::Right);
+        assert_eq!(pos, Point::new_3d(0, 2, 1));
     }
 
+    #[ignore]
     #[test]
     fn test_day22_part2() {
         let input = parse_input(DAY22_EXAMPLE);
