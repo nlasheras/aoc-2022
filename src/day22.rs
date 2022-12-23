@@ -112,17 +112,18 @@ fn rotate(facing: (i32, i32), direction: &Move) -> (i32, i32) {
     }
 }
 
-pub struct WrapLogic<'a> {
+trait WrapLogic {
+    fn cell_at(&self, pos: &Point) -> Option<char>;
+    fn move_point(&self, pos: &Point, facing: &Facing) -> Point;
+}
+
+pub struct SimpleWraparound<'a> {
     map: &'a Grid<char>,
 }
 
-impl WrapLogic<'_> {
-    fn new(map: &Grid<char>) -> WrapLogic {
-        WrapLogic { map: map }
-    }
-
-    fn cell_at(&self, x: i32, y: i32) -> Option<char> {
-        self.map.cell_at(x, y)
+impl SimpleWraparound<'_> {
+    fn new(map: &Grid<char>) -> SimpleWraparound {
+        SimpleWraparound { map: map }
     }
 
     fn wraparound(&self, pos: &Point, facing: &Facing) -> Point {
@@ -135,6 +136,12 @@ impl WrapLogic<'_> {
             wrap = wrap - dir;
         }
         wrap + dir
+    }
+}
+
+impl WrapLogic for SimpleWraparound<'_> {
+    fn cell_at(&self, pos: &Point) -> Option<char> {
+        self.map.cell_at(pos.x, pos.y)
     }
 
     fn move_point(&self, pos: &Point, facing: &Facing) -> Point {
@@ -157,34 +164,44 @@ impl WrapLogic<'_> {
     }
 }
 
-fn move_in_map(map: &WrapLogic, pos: &Point, facing: &Facing) -> Point {
+fn move_in_map(map: &dyn WrapLogic, pos: &Point, facing: &Facing) -> Point {
     let candidate = map.move_point(pos, facing);
-    let c = map.cell_at(candidate.x, candidate.y).unwrap();
+    let c = map.cell_at(&candidate).unwrap();
     if c == '#' {
         return *pos;
     }
     candidate
 }
 
-#[aoc(day22, part1)]
-pub fn get_password(input: &Input) -> i64 {
-    let (map, path) = input;
-    let start_x = map.cells.iter().position(|c| *c == '.').unwrap() as i32;
-    let mut state = (Point::new(start_x, 0), Facing::Right);
-    let wrapping = WrapLogic::new(map);
+fn follow_path(
+    map: &dyn WrapLogic,
+    path: &Vec<Move>,
+    start: &Point,
+    facing: &Facing,
+) -> (Point, Facing) {
+    let mut state = (start.clone(), facing.clone());
     for movement in path.iter() {
         match movement {
             Move::Right => state.1 = state.1.rotate_cw(),
             Move::Left => state.1 = state.1.rotate_ccw(),
             Move::Number(n) => {
                 for _ in 0..*n {
-                    state.0 = move_in_map(&wrapping, &state.0, &state.1)
+                    state.0 = move_in_map(map, &state.0, &state.1)
                 }
             }
         }
     }
-    let facing_value = state.1 as i32;
-    ((state.0.y + 1) * 1000 + (state.0.x + 1) * 4 + facing_value) as i64
+    state
+}
+
+#[aoc(day22, part1)]
+pub fn get_password(input: &Input) -> i64 {
+    let (map, path) = input;
+    let wrapping = SimpleWraparound::new(map);
+    let start_x = map.cells.iter().position(|c| *c == '.').unwrap() as i32;
+    let end = follow_path(&wrapping, path, &Point::new(start_x, 0), &Facing::Right);
+    let facing_value = end.1 as i32;
+    ((end.0.y + 1) * 1000 + (end.0.x + 1) * 4 + facing_value) as i64
 }
 
 struct CubeNet {
