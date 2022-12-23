@@ -1,14 +1,55 @@
 use crate::utils::Grid;
+use crate::utils::Point;
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use std::cmp;
 use std::collections::HashMap;
+use std::ops::Rem;
 
 #[derive(Debug)]
 pub enum Move {
     Number(u32),
     Right,
     Left,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Facing {
+    Right = 0,
+    Down = 1,
+    Left = 2,
+    Up = 3,
+}
+
+impl Facing {
+    fn from_i8(n: i8) -> Facing {
+        match n {
+            0 => Facing::Right,
+            1 => Facing::Down,
+            2 => Facing::Left,
+            3 => Facing::Up,
+            _ => panic!("Wrong facing!"),
+        }
+    }
+
+    fn rotate_cw(&self) -> Facing {
+        let value = *self as i8;
+        return Facing::from_i8((value + 1).rem(4));
+    }
+
+    fn rotate_ccw(&self) -> Facing {
+        let value = *self as i8;
+        return Facing::from_i8((value - 1).rem_euclid(4));
+    }
+
+    fn as_vector(&self) -> Point {
+        match self {
+            Facing::Right => Point::new(1, 0),
+            Facing::Down => Point::new(0, 1),
+            Facing::Left => Point::new(-1, 0),
+            Facing::Up => Point::new(0, -1),
+        }
+    }
 }
 
 type Input = (Grid<char>, Vec<Move>);
@@ -71,62 +112,79 @@ fn rotate(facing: (i32, i32), direction: &Move) -> (i32, i32) {
     }
 }
 
-fn wraparound(map: &Grid<char>, pos: (i32, i32), facing: (i32, i32)) -> (i32, i32) {
-    let back = (-facing.0, -facing.1);
-    let mut wrap = (pos.0 + back.0, pos.1 + back.1);
-    while let Some(c) = map.cell_at(wrap.0, wrap.1) {
-        if c == ' ' {
-            break;
-        }
-        wrap = (wrap.0 + back.0, wrap.1 + back.1)
-    }
-    (wrap.0 + facing.0, wrap.1 + facing.1)
+pub struct WrapLogic<'a> {
+    map: &'a Grid<char>,
 }
 
-fn move_in_map(map: &Grid<char>, pos: (i32, i32), n: u32, facing: (i32, i32)) -> (i32, i32) {
-    let mut new_pos = pos.clone();
-    let (width, height) = map.size();
-    for _ in 0..n {
-        let mut candidate = (new_pos.0 + facing.0, new_pos.1 + facing.1);
-        if candidate.0 == -1
-            || candidate.0 == width as i32
-            || candidate.1 == -1
-            || candidate.1 == height as i32
-        {
-            candidate = wraparound(map, candidate, facing);
-        }
-        let mut c = map.cell_at(candidate.0, candidate.1).unwrap();
-        if c == ' ' {
-            candidate = wraparound(map, candidate, facing);
-            c = map.cell_at(candidate.0, candidate.1).unwrap();
-        }
-        if c == '#' {
-            return new_pos;
-        }
-        new_pos = candidate
+impl WrapLogic<'_> {
+    fn new(map: &Grid<char>) -> WrapLogic {
+        WrapLogic { map: map }
     }
-    new_pos
+
+    fn cell_at(&self, x: i32, y: i32) -> Option<char> {
+        self.map.cell_at(x, y)
+    }
+
+    fn wraparound(&self, pos: &Point, facing: &Facing) -> Point {
+        let dir = facing.as_vector();
+        let mut wrap = *pos - dir;
+        while let Some(c) = self.map.cell_at(wrap.x, wrap.y) {
+            if c == ' ' {
+                break;
+            }
+            wrap = wrap - dir;
+        }
+        wrap + dir
+    }
+
+    fn move_point(&self, pos: &Point, facing: &Facing) -> Point {
+        let mut candidate = *pos + facing.as_vector();
+        let (width, height) = self.map.size();
+
+        if candidate.x < 0
+            || candidate.x >= width as i32
+            || candidate.y < 0
+            || candidate.y >= height as i32
+        {
+            candidate = self.wraparound(&candidate, facing);
+        }
+
+        let c = self.map.cell_at(candidate.x, candidate.y).unwrap();
+        if c == ' ' {
+            candidate = self.wraparound(&candidate, facing);
+        }
+        candidate
+    }
+}
+
+fn move_in_map(map: &WrapLogic, pos: &Point, facing: &Facing) -> Point {
+    let candidate = map.move_point(pos, facing);
+    let c = map.cell_at(candidate.x, candidate.y).unwrap();
+    if c == '#' {
+        return *pos;
+    }
+    candidate
 }
 
 #[aoc(day22, part1)]
 pub fn get_password(input: &Input) -> i64 {
     let (map, path) = input;
     let start_x = map.cells.iter().position(|c| *c == '.').unwrap() as i32;
-    let mut state = ((start_x, 0), (1, 0)); // facing right
+    let mut state = (Point::new(start_x, 0), Facing::Right);
+    let wrapping = WrapLogic::new(map);
     for movement in path.iter() {
         match movement {
-            Move::Right | Move::Left => state.1 = rotate(state.1, movement),
-            Move::Number(n) => state.0 = move_in_map(map, state.0, *n, state.1),
+            Move::Right => state.1 = state.1.rotate_cw(),
+            Move::Left => state.1 = state.1.rotate_ccw(),
+            Move::Number(n) => {
+                for _ in 0..*n {
+                    state.0 = move_in_map(&wrapping, &state.0, &state.1)
+                }
+            }
         }
     }
-    let facing_value = match state.1 {
-        (1, 0) => 0,
-        (0, 1) => 1,
-        (-1, 0) => 2,
-        (0, -1) => 3,
-        _ => panic!("Shouldn't happen"),
-    };
-    ((state.0 .1 + 1) * 1000 + (state.0 .0 + 1) * 4 + facing_value) as i64
+    let facing_value = state.1 as i32;
+    ((state.0.y + 1) * 1000 + (state.0.x + 1) * 4 + facing_value) as i64
 }
 
 struct CubeNet {
@@ -395,5 +453,31 @@ mod tests {
     fn test_day22_part2() {
         let input = parse_input(DAY22_EXAMPLE);
         assert_eq!(get_password_with_cube(&input), 5031);
+    }
+
+    #[test]
+    fn test_day22_facing_cw() {
+        let start = Facing::Right;
+        let cw1 = start.rotate_cw();
+        assert_eq!(cw1, Facing::Down);
+        let cw2 = cw1.rotate_cw();
+        assert_eq!(cw2, Facing::Left);
+        let cw3 = cw2.rotate_cw();
+        assert_eq!(cw3, Facing::Up);
+        let cw4 = cw3.rotate_cw();
+        assert_eq!(cw4, Facing::Right);
+    }
+
+    #[test]
+    fn test_day22_facing_ccw() {
+        let start = Facing::Right;
+        let ccw1 = start.rotate_ccw();
+        assert_eq!(ccw1, Facing::Up);
+        let ccw2 = ccw1.rotate_ccw();
+        assert_eq!(ccw2, Facing::Left);
+        let ccw3 = ccw2.rotate_ccw();
+        assert_eq!(ccw3, Facing::Down);
+        let ccw4 = ccw3.rotate_ccw();
+        assert_eq!(ccw4, Facing::Right);
     }
 }

@@ -95,15 +95,20 @@ impl<T: Clone + fmt::Debug> fmt::Display for Grid<T> {
 pub struct Point {
     pub x: i32,
     pub y: i32,
+    pub z: i32,
 }
 
 impl Point {
     pub fn new(x: i32, y: i32) -> Point {
-        Point { x: x, y: y }
+        Point { x: x, y: y, z: 0 }
+    }
+
+    pub fn new_3d(x: i32, y: i32, z: i32) -> Point {
+        Point { x: x, y: y, z: z }
     }
 
     pub fn manhattan_dist(&self, other: &Point) -> i32 {
-        (self.x - other.x).abs() + (self.y - other.y).abs()
+        (self.x - other.x).abs() + (self.y - other.y).abs() + (self.z - other.z).abs()
     }
 }
 
@@ -113,6 +118,7 @@ impl ops::Add<Point> for Point {
         Point {
             x: self.x + _rhs.x,
             y: self.y + _rhs.y,
+            z: self.z + _rhs.z,
         }
     }
 }
@@ -123,6 +129,7 @@ impl ops::Sub<Point> for Point {
         Point {
             x: self.x - _rhs.x,
             y: self.y - _rhs.y,
+            z: self.z - _rhs.z,
         }
     }
 }
