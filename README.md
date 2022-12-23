@@ -92,3 +92,7 @@ Quite straightforward problem. Maybe something that I would like to cleanup is m
 ### Day 22
 
 Part 1 was relatively easy. Part two ramps up a lot. I wasn't able to finish it before the end of day. Will keep working on it when I have some more time.
+
+### Day 23
+
+This one was easier than yesterday. For part 2 I can probably speed it up a bit avoiding the comparison between sets.
