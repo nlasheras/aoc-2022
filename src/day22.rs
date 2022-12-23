@@ -332,8 +332,9 @@ impl CubeNet<'_> {
 
 impl WrapLogic for CubeNet<'_> {
     fn cell_at(&self, pos: &Point) -> Option<char> {
-        let col = pos.x + 4 * self.size.0;
-        let row = pos.y + 4 * self.size.1;
+        let (cube_x, cube_y) = self.get_cube(pos.z);
+        let col = pos.x + cube_x * self.size.0;
+        let row = pos.y + cube_y * self.size.1;
         self.map.cell_at(col, row)
     }
 
@@ -427,7 +428,6 @@ mod tests {
         assert_eq!(pos, Point::new_3d(0, 2, 1));
     }
 
-    #[ignore]
     #[test]
     fn test_day22_part2() {
         let input = parse_input(DAY22_EXAMPLE);
