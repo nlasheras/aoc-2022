@@ -91,7 +91,7 @@ Quite straightforward problem. Maybe something that I would like to cleanup is m
 
 ### Day 22
 
-Part 1 was relatively easy. Part two ramps up a lot. I wasn't able to finish it before the end of day. Will keep working on it when I have some more time.
+Part 1 was relatively easy. Part two ramps up a lot. I wasn't able to finish it before the end of day. After a bit of time spent refactoring and cleaning up the solution, I managed to crack the position translation and spotted the a couple of wrong connections and finally got my second gold star for this day :satisfied:. The solution is not generic at all, it has the cube net for the input and the example hardcoded, but I'm happy for now with this.
 
 ### Day 23
 

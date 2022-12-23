@@ -236,8 +236,8 @@ impl CubeNet<'_> {
 
     pub fn input(map: &Grid<char>) -> CubeNet {
         let mut connections = HashMap::new();
-        connections.insert((1, Facing::Up), (4, Facing::Right));
-        connections.insert((1, Facing::Left), (6, Facing::Right));
+        connections.insert((1, Facing::Up), (6, Facing::Right));
+        connections.insert((1, Facing::Left), (4, Facing::Right));
 
         connections.insert((2, Facing::Up), (6, Facing::Up));
         connections.insert((2, Facing::Right), (5, Facing::Left));
@@ -276,19 +276,18 @@ impl CubeNet<'_> {
     }
 
     fn cube_at(&self, x: i32, y: i32) -> Option<i32> {
-        let cube = self.cells.iter().nth((4 * y + x) as usize).unwrap();
-        if *cube != 0 {
-            return Some(*cube);
+        if x >= 0 && x < 4 && y >= 0 && y < 4 {
+            let cube = *self.cells.iter().nth((4 * y + x) as usize).unwrap();
+            if cube != 0 {
+                return Some(cube);
+            }
         }
         None
     }
 
     fn get_cube_with_facing(&self, x: i32, y: i32, facing: &Facing) -> (i32, Facing) {
         let cube = self.cube_at(x, y).unwrap();
-        println!("get_cube_with_facing({}, {:?})", cube, facing);
-        let (a, b) = *self.connections.get(&(cube, *facing)).unwrap();
-        println!("    {:?} {:?}", a, b);
-        (a, b)
+        *self.connections.get(&(cube, *facing)).unwrap()
     }
 
     fn translate_pos(&self, pos: &Point, old_facing: &Facing, new_facing: &Facing) -> Point {
@@ -305,7 +304,6 @@ impl CubeNet<'_> {
             Facing::Down => Point::new_3d(width - 1 - relative, 0, pos.z),
             Facing::Up => Point::new_3d(relative, height - 1, pos.z),
         };
-        println!("  translate_pos({:?})= {:?}", pos, new_pos);
         new_pos
     }
 
@@ -332,7 +330,10 @@ impl CubeNet<'_> {
         } else {
             let (cube, new_facing) = self.get_cube_with_facing(cube_x, cube_y, facing);
             new_pos.z = cube;
-            (self.translate_pos(&new_pos, facing, &new_facing), new_facing)
+            (
+                self.translate_pos(&new_pos, facing, &new_facing),
+                new_facing,
+            )
         }
     }
 }
@@ -369,8 +370,8 @@ pub fn get_password_with_cube(input: &Input) -> i64 {
 
     let facing_value = end.1 as i32;
     let (cube_x, cube_y) = cube.get_cube(end.0.z);
-    let col = end.0.x + 4 * cube_x;
-    let row = end.0.y + 4 * cube_y;
+    let col = end.0.x + cube.size.0 * cube_x;
+    let row = end.0.y + cube.size.1 * cube_y;
     ((row + 1) * 1000 + (col + 1) * 4 + facing_value) as i64
 }
 
