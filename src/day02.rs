@@ -7,12 +7,12 @@ pub fn parse_input(input: &str) -> Vec<(char, char)> {
         .lines()
         .map(|s| {
             let mut chars = s.chars();
-            (chars.nth(0).unwrap(), chars.nth(1).unwrap()) // NOTE: nth consumes
+            (chars.next().unwrap(), chars.nth(1).unwrap())
         })
         .collect()
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Shape {
     Rock = 1,
     Paper = 2,
@@ -21,12 +21,12 @@ pub enum Shape {
 
 impl Shape {
     fn from_i64(n: i64) -> Shape {
-        return match n {
+        match n {
             1 => Shape::Rock,
             2 => Shape::Paper,
             3 => Shape::Scissors,
             _ => panic!("Unknown shape!"),
-        };
+        }
     }
 
     pub fn beats_shape(&self) -> Shape {
@@ -53,16 +53,16 @@ pub fn get_score(player: Shape, opponent: Shape) -> u64 {
     if opponent.beats_shape() == player {
         return 0;
     }
-    return 3;
+    3
 }
 
 pub fn decode_shape(c: char) -> Shape {
-    return match c {
+    match c {
         'A' | 'X' => Shape::Rock,
         'B' | 'Y' => Shape::Paper,
         'C' | 'Z' => Shape::Scissors,
         _ => panic!("Unsupported char in strategy"),
-    };
+    }
 }
 
 #[aoc(day2, part1)]
@@ -77,21 +77,21 @@ pub fn solve_part1(strategy: &Vec<(char, char)>) -> u64 {
 }
 
 pub fn get_right_shape(score: u64, opponent: Shape) -> Shape {
-    return match score {
+    match score {
         3 => opponent,                      // draw
         6 => opponent.is_beaten_by_shape(), // win
         0 => opponent.beats_shape(),        // lose
         _ => panic!("Unsupported outcome!"),
-    };
+    }
 }
 
 pub fn decode_outcome(c: char) -> u64 {
-    return match c {
+    match c {
         'X' => 0,
         'Y' => 3,
         'Z' => 6,
         _ => panic!("Unsupported outcome in strategy!"),
-    };
+    }
 }
 
 #[aoc(day2, part2)]
