@@ -14,7 +14,7 @@ fn repeated_char(window: &[char]) -> Option<char> {
             }
         }
     }
-    return None;
+    None
 }
 
 fn find_start_marker(input: &str, window_size: usize) -> u64 {
@@ -43,27 +43,45 @@ mod tests {
 
     #[test]
     fn test_day6_example() {
-        assert_eq!( find_first_start_package("mjqjpqmgbljsphdztnvjfqwrcgsmlb"), 7);
+        assert_eq!(
+            find_first_start_package("mjqjpqmgbljsphdztnvjfqwrcgsmlb"),
+            7
+        );
     }
 
     #[test]
     fn test_day6_extra_examples() {
         assert_eq!(find_first_start_package("bvwbjplbgvbhsrlpgdmjqwftvncz"), 5);
         assert_eq!(find_first_start_package("nppdvjthqldpwncqszvftbrmjlhg"), 6);
-        assert_eq!(find_first_start_package("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"), 10);
-        assert_eq!(find_first_start_package("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"), 11);
+        assert_eq!(
+            find_first_start_package("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"),
+            10
+        );
+        assert_eq!(
+            find_first_start_package("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"),
+            11
+        );
     }
 
     #[test]
     fn test_day6_part2() {
-        assert_eq!(find_first_start_message("mjqjpqmgbljsphdztnvjfqwrcgsmlb"), 19);
+        assert_eq!(
+            find_first_start_message("mjqjpqmgbljsphdztnvjfqwrcgsmlb"),
+            19
+        );
     }
 
     #[test]
     fn test_day6_part2_extra_examples() {
         assert_eq!(find_first_start_message("bvwbjplbgvbhsrlpgdmjqwftvncz"), 23);
         assert_eq!(find_first_start_message("nppdvjthqldpwncqszvftbrmjlhg"), 23);
-        assert_eq!(find_first_start_message("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"), 29);
-        assert_eq!(find_first_start_message("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"), 26);
+        assert_eq!(
+            find_first_start_message("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"),
+            29
+        );
+        assert_eq!(
+            find_first_start_message("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"),
+            26
+        );
     }
 }

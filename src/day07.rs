@@ -34,16 +34,16 @@ impl DirEntry {
     }
 }
 
-fn parse_commands(input: &Vec<String>) -> Tree<DirEntry> {
+fn parse_commands(input: &[String]) -> Tree<DirEntry> {
     let mut root = TreeBuilder::new()
         .with_root(DirEntry::directory("/"))
         .build();
     let mut cwd = root.root().unwrap().node_id();
 
-    for line in input.into_iter().skip(1) {
+    for line in input.iter().skip(1) {
         // assume input starts with cd /
-        if line.starts_with("$") {
-            let parts: Vec<&str> = line.split(" ").collect();
+        if line.starts_with('$') {
+            let parts: Vec<&str> = line.split(' ').collect();
             let command = parts[1];
             match command {
                 "cd" => {
@@ -62,13 +62,13 @@ fn parse_commands(input: &Vec<String>) -> Tree<DirEntry> {
                 _ => panic!("Unhandled command"),
             }
         } else if line.starts_with("dir") {
-            let name = line.split(" ").nth(1).unwrap();
+            let name = line.split(' ').nth(1).unwrap();
 
             let mut node = root.get_mut(cwd).unwrap();
-            node.append(DirEntry::directory(&name));
+            node.append(DirEntry::directory(name));
         } else {
             // file
-            let split = line.split(" ").collect::<Vec<&str>>();
+            let split = line.split(' ').collect::<Vec<&str>>();
             let file_size = split[0].parse::<u64>().unwrap();
             let file_name = split[1];
 
@@ -115,11 +115,11 @@ fn println(tree: &NodeRef<DirEntry>) {
         let line = format!("{}- {} {}\n", indent, entry.name, info);
         output.push_str(&line);
     });
-   println!("{}", output);
+    println!("{}", output);
 }
 
 #[aoc(day7, part1)]
-pub fn sum_directories_smaller_than_100k(input: &Vec<String>) -> u64 {
+pub fn sum_directories_smaller_than_100k(input: &[String]) -> u64 {
     let dir = parse_commands(input);
     sum_size_with_limit(dir.root().unwrap(), Some(100_000))
 }
@@ -144,7 +144,7 @@ fn smallest_bigger_than(tree: &NodeRef<DirEntry>, minimum_size: u64) -> Option<u
 }
 
 #[aoc(day7, part2)]
-pub fn find_directory_free_30gb(input: &Vec<String>) -> u64 {
+pub fn find_directory_free_30gb(input: &[String]) -> u64 {
     let dir = parse_commands(input);
     let total = sum_file_size(&dir.root().unwrap());
     let free = 70_000_000 - total;
@@ -192,5 +192,4 @@ $ ls
         let input = parse_input(DAY07_EXAMPLE);
         assert_eq!(find_directory_free_30gb(&input), 24_933_642);
     }
-
 }

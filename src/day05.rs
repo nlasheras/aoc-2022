@@ -8,15 +8,13 @@ type Procedure = Vec<(usize, usize, usize)>;
 type Input = (Vec<Stack>, Procedure);
 
 fn parse_stacks(input: &str) -> Vec<Stack> {
-    let count = (input.lines().nth(0).unwrap().len() + 2) / 4;
+    let count = (input.lines().next().unwrap().len() + 2) / 4;
     let mut stacks = vec![Stack::new(); count];
     for line in input.lines().rev().skip(1) {
-        for i in 0..count {
-            let c = line.chars().nth(i * 4 + 1).unwrap();
-            if c != ' ' {
-                stacks[i].push(c);
-            }
-        }
+        (0..count)
+            .map(|i| (i, line.chars().nth(i * 4 + 1).unwrap()))
+            .filter(|p| p.1 != ' ')
+            .for_each(|(i, c)| stacks[i].push(c));
     }
     stacks
 }
@@ -47,20 +45,19 @@ pub fn parse_input(input: &str) -> Input {
     (stacks, moves)
 }
 
-fn move_crates_from_stack(stacks: &mut Vec<Stack>, from: usize, to: usize, count: usize) {
-    let source = stacks.iter_mut().nth(from - 1).unwrap();
+fn move_crates_from_stack(stacks: &mut [Stack], from: usize, to: usize, count: usize) {
+    let source = stacks.get_mut(from - 1).unwrap();
     let moved_crates = source.split_off(source.len() - count);
     stacks
-        .iter_mut()
-        .nth(to - 1)
+        .get_mut(to - 1)
         .unwrap()
         .extend(moved_crates.into_iter());
 }
 
-fn get_top_of_stacks(stacks: &Vec<Stack>) -> String {
+fn get_top_of_stacks(stacks: &[Stack]) -> String {
     let mut ret = String::new();
     for stack in stacks.iter() {
-        ret.push_str(&stack.into_iter().last().unwrap().to_string());
+        ret.push_str(&stack.iter().last().unwrap().to_string());
     }
     ret.to_string()
 }

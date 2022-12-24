@@ -24,16 +24,16 @@ fn get_failing_item(sack: &Vec<char>) -> char {
 }
 
 fn get_item_priority(c: char) -> u8 {
-    return match c {
-        'a'..='z' => 1 + (c as u8) - ('a' as u8),
-        'A'..='Z' => 27 + (c as u8) - ('A' as u8),
+    match c {
+        'a'..='z' => 1 + (c as u8) - b'a',
+        'A'..='Z' => 27 + (c as u8) - b'A',
         _ => panic!("Unsupported item!"),
-    };
+    }
 }
 
 #[aoc(day3, part1)]
-pub fn sum_mismatched_priorities(input: &Vec<Vec<char>>) -> u64 {
-    input.into_iter().fold(0, |sum, sack| {
+pub fn sum_mismatched_priorities(input: &[Vec<char>]) -> u64 {
+    input.iter().fold(0, |sum, sack| {
         let item = get_failing_item(sack);
         sum + get_item_priority(item) as u64
     })
@@ -49,7 +49,7 @@ fn get_badge(input: &[Vec<char>]) -> char {
 }
 
 #[aoc(day3, part2)]
-pub fn sum_badge_priorities(input: &Vec<Vec<char>>) -> u64 {
+pub fn sum_badge_priorities(input: &[Vec<char>]) -> u64 {
     input.chunks(3).fold(0, |sum, sacks| {
         let item = get_badge(sacks);
         sum + get_item_priority(item) as u64

@@ -35,9 +35,9 @@ fn overlap_range(pair: &(Assignment, Assignment)) -> Option<Assignment> {
 }
 
 #[aoc(day4, part1)]
-pub fn count_fully_contained(input: &Vec<(Assignment, Assignment)>) -> usize {
+pub fn count_fully_contained(input: &[(Assignment, Assignment)]) -> usize {
     input
-        .into_iter()
+        .iter()
         .filter(|pair| {
             if let Some(overlap) = overlap_range(pair) {
                 return overlap.len() == cmp::min(pair.0.len(), pair.1.len());
@@ -48,9 +48,9 @@ pub fn count_fully_contained(input: &Vec<(Assignment, Assignment)>) -> usize {
 }
 
 #[aoc(day4, part2)]
-pub fn count_overlaps(input: &Vec<(Assignment, Assignment)>) -> usize {
+pub fn count_overlaps(input: &[(Assignment, Assignment)]) -> usize {
     input
-        .into_iter()
+        .iter()
         .map(overlap_range)
         .filter(|o| o.is_some())
         .count()
