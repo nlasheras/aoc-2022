@@ -2,8 +2,8 @@ use crate::utils::Grid;
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use priority_queue::DoublePriorityQueue;
-use std::collections::BTreeSet;
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 
 #[derive(Clone)]
 pub struct Blizzard {
@@ -134,50 +134,30 @@ fn dist(pos: (i32, i32), goal: (i32, i32)) -> u64 {
 
 pub fn find_path(input: &Valley) -> Option<i32> {
     let mut open_set = DoublePriorityQueue::new();
-    open_set.push((input.start, 0), 0);
+    open_set.push((input.start, 0), dist(input.start, input.end) as usize);
 
     let mut state_cache = BTreeMap::new();
-
     let mut closed_set = BTreeSet::new();
 
-    let mut _count = 0;
-
-    let max_dist = dist(input.start, input.end);
-    let mut min_time = usize::MAX;
-    let mut _prune = 0;
     while !open_set.is_empty() {
-        _count += 1;
-
-        // get the element with smallest fScore
-        let (tmp, _priority) = open_set.pop_min().unwrap();
-        let (current, time) = tmp;
-        if time + dist(current, input.end) as usize >= min_time {
-            _prune += 1;
+        let (elem, priority) = open_set.pop_min().unwrap();
+        let (current, time) = elem;
+        if closed_set.contains(&elem) {
             continue;
         }
-        if closed_set.contains(&tmp) {
-            continue;
-        }
-
-        if _count % 100 == 0 {
-            println!("Eval {:?} with t = {} (remaining={}, pruned={})", current, time, open_set.len(), _prune);
-            _prune = 0;
-        }
+        closed_set.insert(elem);
 
         if current == input.end {
-            if time < min_time {
-                println!("Found time {}  in {} states (remaining {})", time, _count, open_set.len());
-                min_time = time;
-                continue;
-            }
+            return Some(time as i32);
         }
 
-        closed_set.insert(tmp);
-
-        let state = state_cache.entry(time+1).or_insert(input.tick(time + 1));
+        let state = state_cache.entry(time + 1).or_insert(Vec::new());
+        if state.is_empty() {
+            state.extend(input.tick(time + 1));
+        }
         if !state.iter().any(|b| b.pos == current) {
             // wait state
-            open_set.push((current, time + 1), _priority + 10_000);
+            open_set.push((current, time + 1), priority + 1);
         }
         for (c, cell_pos) in input.map.neighbors_at(current.0, current.1) {
             let candidate = (cell_pos.0 as i32, cell_pos.1 as i32);
@@ -188,21 +168,14 @@ pub fn find_path(input: &Valley) -> Option<i32> {
                 continue;
             }
 
-            let d = dist(candidate, input.end) as usize;
-            if time + d >= min_time {
-                continue;
-            }
-
             if state.iter().any(|b| b.pos == candidate) {
                 continue;
             }
 
-            let score  = d * 10_000 + time;
-            open_set.push((candidate, time + 1), score as i32);
+            let dist = dist(candidate, input.end) as usize;
+            let score = dist + time;
+            open_set.push((candidate, time + 1), score);
         }
-    }
-    if min_time != usize::MAX {
-        return Some(min_time as i32)
     }
     None
 }
@@ -210,6 +183,21 @@ pub fn find_path(input: &Valley) -> Option<i32> {
 #[aoc(day24, part1)]
 pub fn shortest_path_minutes(input: &Valley) -> u64 {
     find_path(input).unwrap() as u64
+}
+
+#[aoc(day24, part2)]
+pub fn shortest_path_part2(input: &Valley) -> u64 {
+    let mut valley = input.clone();
+    let step1 = find_path(&valley).unwrap();
+    valley.blizzards = valley.tick(step1 as usize);
+    valley.start = input.end;
+    valley.end = input.start;
+    let step2 = find_path(&valley).unwrap();
+    valley.blizzards = valley.tick(step2 as usize);
+    valley.start = input.start;
+    valley.end = input.end;
+    let step3 = find_path(&valley).unwrap();
+    (step1 + step2 + step3) as u64
 }
 
 #[cfg(test)]
@@ -227,5 +215,11 @@ mod tests {
     fn test_day24_find_path() {
         let input = parse_input(DAY24_EXAMPLE);
         assert_eq!(shortest_path_minutes(&input), 18);
+    }
+
+    #[test]
+    fn test_day24_find_3_paths() {
+        let input = parse_input(DAY24_EXAMPLE);
+        assert_eq!(shortest_path_part2(&input), 54);
     }
 }
