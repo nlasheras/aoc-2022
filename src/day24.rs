@@ -34,9 +34,10 @@ pub struct Valley {
 }
 
 impl Valley {
-    fn print(&self, pos: Option<(i32, i32)>) -> String {
+    fn print(&self, minutes: usize, pos: Option<(i32, i32)>) -> String {
         let mut ret = "".to_string();
         let (width, height) = self.map.size();
+        let state = self.tick(minutes);
         for y in 0..height as i32 {
             for x in 0..width as i32 {
                 if let Some(current) = pos {
@@ -45,8 +46,7 @@ impl Valley {
                         continue;
                     }
                 }
-                let blizzards = self
-                    .blizzards
+                let blizzards = state
                     .iter()
                     .filter(|b| b.pos == (x, y))
                     .collect::<Vec<&Blizzard>>();
@@ -66,25 +66,29 @@ impl Valley {
         ret
     }
 
-    fn tick(&mut self) {
+    fn tick(&self, minutes: usize) -> Vec<Blizzard> {
+        let mut ret = self.blizzards.clone();
         let (width, height) = self.map.size();
-        for b in self.blizzards.iter_mut() {
-            let dir = b.as_vec();
-            let mut new_pos = b.pos;
-            loop {
-                new_pos = (
-                    (new_pos.0 + dir.0).rem_euclid(width as i32),
-                    (new_pos.1 + dir.1).rem_euclid(height as i32),
-                );
-                let c = self.map.cell_at(new_pos.0, new_pos.1);
-                if let Some(c) = c {
-                    if c == '.' {
-                        break;
+        for b in ret.iter_mut() {
+            for _ in 0..minutes {
+                let dir = b.as_vec();
+                let mut new_pos = b.pos;
+                loop {
+                    new_pos = (
+                        (new_pos.0 + dir.0).rem_euclid(width as i32),
+                        (new_pos.1 + dir.1).rem_euclid(height as i32),
+                    );
+                    let c = self.map.cell_at(new_pos.0, new_pos.1);
+                    if let Some(c) = c {
+                        if c == '.' {
+                            break;
+                        }
                     }
                 }
+                b.pos = new_pos;
             }
-            b.pos = new_pos;
         }
+        ret
     }
 }
 
@@ -122,12 +126,10 @@ pub fn parse_input(input: &str) -> Valley {
 }
 
 pub fn find_path(input: &Valley) -> Vec<(i32, i32)> {
-    let mut valley = input.clone();
-    println!("{}", valley.print(Some((1, 0))));
-    valley.tick();
-    println!("{}", valley.print(Some((1, 0))));
-    valley.tick();
-    println!("{}", valley.print(Some((1, 0))));
+    let valley = input.clone();
+    println!("{}", valley.print(0, Some((1, 0))));
+    println!("{}", valley.print(1, Some((1, 0))));
+    println!("{}", valley.print(2, Some((1, 0))));
     Vec::new()
 }
 
