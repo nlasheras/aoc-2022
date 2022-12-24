@@ -1,6 +1,8 @@
 use crate::utils::Grid;
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use priority_queue::DoublePriorityQueue;
+use std::collections::BTreeSet;
 
 #[derive(Clone)]
 pub struct Blizzard {
@@ -125,17 +127,57 @@ pub fn parse_input(input: &str) -> Valley {
     }
 }
 
-pub fn find_path(input: &Valley) -> Vec<(i32, i32)> {
-    let valley = input.clone();
-    println!("{}", valley.print(0, Some((1, 0))));
-    println!("{}", valley.print(1, Some((1, 0))));
-    println!("{}", valley.print(2, Some((1, 0))));
-    Vec::new()
+fn dist(pos: (i32, i32), goal: (i32, i32)) -> u64 {
+    (goal.0 - pos.0).abs() as u64 + (goal.1 - pos.1).abs() as u64
+}
+
+pub fn find_path(input: &Valley) -> Option<i32> {
+    let mut open_set = DoublePriorityQueue::new();
+    open_set.push((input.start, 0), 0);
+
+    let mut closed_set = BTreeSet::new();
+
+    while !open_set.is_empty() {
+        // get the element with smallest fScore
+        let (tmp, _priority) = open_set.pop_min().unwrap();
+        let (current, time) = tmp;
+        if closed_set.contains(&tmp) {
+            continue;
+        }
+
+        if current == input.end {
+            return Some(time as i32);
+        }
+
+        closed_set.insert(tmp);
+
+        let state = input.tick(time + 1);
+        if !state.iter().any(|b| b.pos == current) {
+            // wait state
+            open_set.push((current, time + 1), _priority + 10_000);
+        }
+        for (c, cell_pos) in input.map.neighbors_at(current.0, current.1) {
+            let candidate = (cell_pos.0 as i32, cell_pos.1 as i32);
+            if closed_set.contains(&(candidate, time + 1)) {
+                continue;
+            }
+            if c != '.' {
+                continue;
+            }
+            if state.iter().any(|b| b.pos == candidate) {
+                continue;
+            }
+
+            let score = dist(candidate, input.end) + 10_000 * time as u64;
+            open_set.push((candidate, time + 1), score);
+        }
+    }
+    None
 }
 
 #[aoc(day24, part1)]
 pub fn shortest_path_minutes(input: &Valley) -> u64 {
-    find_path(input).len() as u64
+    find_path(input).unwrap() as u64
 }
 
 #[cfg(test)]
