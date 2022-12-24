@@ -37,6 +37,7 @@ pub struct Valley {
 }
 
 impl Valley {
+    #[allow(dead_code)]
     fn print(&self, minutes: usize, pos: Option<(i32, i32)>) -> String {
         let mut ret = "".to_string();
         let (width, height) = self.map.size();
@@ -69,10 +70,9 @@ impl Valley {
         ret
     }
 
-    fn tick(&self, minutes: usize) -> Vec<Blizzard> {
-        let mut ret = self.blizzards.clone();
+    fn simulate(&self, blizzards: &mut Vec<Blizzard>, minutes: usize) {
         let (width, height) = self.map.size();
-        for b in ret.iter_mut() {
+        for b in blizzards.iter_mut() {
             for _ in 0..minutes {
                 let dir = b.as_vec();
                 let mut new_pos = b.pos;
@@ -91,6 +91,11 @@ impl Valley {
                 b.pos = new_pos;
             }
         }
+    }
+
+    fn tick(&self, minutes: usize) -> Vec<Blizzard> {
+        let mut ret = self.blizzards.clone();
+        self.simulate(&mut ret, minutes);
         ret
     }
 }
@@ -136,7 +141,7 @@ pub fn find_path(input: &Valley) -> Option<i32> {
     let mut open_set = DoublePriorityQueue::new();
     open_set.push((input.start, 0), dist(input.start, input.end) as usize);
 
-    let mut state_cache = BTreeMap::new();
+    let mut state_cache: BTreeMap<usize, Vec<Blizzard>> = BTreeMap::new();
     let mut closed_set = BTreeSet::new();
 
     while !open_set.is_empty() {
@@ -151,10 +156,22 @@ pub fn find_path(input: &Valley) -> Option<i32> {
             return Some(time as i32);
         }
 
-        let state = state_cache.entry(time + 1).or_insert(Vec::new());
-        if state.is_empty() {
-            state.extend(input.tick(time + 1));
-        }
+        let state = match state_cache.get(&(time + 1)) {
+            Some(l) => l,
+            None => {
+                let prev = state_cache.get(&time);
+                let blizzards = if let Some(state) = prev {
+                    let mut tmp = state.clone();
+                    input.simulate(&mut tmp, 1);
+                    tmp
+                } else {
+                    input.tick(time + 1)
+                };
+
+                state_cache.insert(time + 1, blizzards);
+                state_cache.get(&(time + 1)).unwrap()
+            }
+        };
         if !state.iter().any(|b| b.pos == current) {
             // wait state
             open_set.push((current, time + 1), priority + 1);

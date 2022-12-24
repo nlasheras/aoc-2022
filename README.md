@@ -96,3 +96,7 @@ Part 1 was relatively easy. Part two ramps up a lot. I wasn't able to finish it 
 ### Day 23
 
 This one was easier than yesterday. For part 2 I can probably speed it up a bit avoiding the comparison between sets.
+
+### Day 24
+
+I got a good idea to get a nice speed up but it wasn't good enough and I still needed 20 min for part 1. Then I realized that `or_insert` wasn't working as intented. When manually inserting in the map myself I got the times to under seconds. Reworking the simulation so I can simulate from a previous step has speed up the code a bit. 
