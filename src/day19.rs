@@ -17,7 +17,7 @@ impl Robot {
         let mut cost = (0, 0, 0, 0);
         for c in costs {
             let mineral = Self::out_from(c);
-            let amount = c.split(" ").nth(0).unwrap().parse::<i32>().unwrap();
+            let amount = c.split(' ').next().unwrap().parse::<i32>().unwrap();
             cost = (
                 cost.0 + mineral.0 * amount,
                 cost.1 + mineral.1 * amount,
@@ -29,7 +29,7 @@ impl Robot {
     }
 
     fn out_from(input: &str) -> Minerals {
-        let mineral = input.split(" ").nth(1).unwrap();
+        let mineral = input.split(' ').nth(1).unwrap();
         match mineral {
             "ore" => (1, 0, 0, 0),
             "clay" => (0, 1, 0, 0),
@@ -62,7 +62,7 @@ struct State {
 }
 
 impl State {
-    pub fn tick(&mut self) -> () {
+    pub fn tick(&mut self) {
         self.inventory = (
             self.inventory.0 + self.robots.0,
             self.inventory.1 + self.robots.1,
@@ -84,18 +84,15 @@ impl State {
 
 impl Blueprint {
     fn from(input: &str) -> Blueprint {
-        let name = input.split(": ").nth(0).unwrap();
+        let name = input.split(": ").next().unwrap();
         let id = name.replace("Blueprint ", "").parse::<i32>().unwrap();
         let recipes = input.split(": ").nth(1).unwrap();
         let robots = recipes
-            .split(".")
+            .split('.')
             .filter(|s| !s.is_empty())
             .map(Robot::from)
             .collect::<Vec<Robot>>();
-        Blueprint {
-            id: id,
-            robots: robots,
-        }
+        Blueprint { id, robots }
     }
 
     fn can_reach(robots: &Minerals, cost: &Minerals) -> bool {
@@ -163,7 +160,7 @@ impl Blueprint {
                     if Self::too_much(&s.inventory, &r.out, time, &max) {
                         continue;
                     }
-                    let mut new = s.clone();
+                    let mut new = s;
                     while !Self::can_pay(&new.inventory, &r.cost) {
                         new.tick();
                     }
@@ -194,7 +191,7 @@ impl Blueprint {
         }
 
         closed_states.sort_by(|s1, s2| s2.inventory.3.cmp(&s1.inventory.3));
-        closed_states.iter().nth(0).unwrap().inventory.3 as u64
+        closed_states.get(0).unwrap().inventory.3 as u64
     }
 }
 
@@ -204,14 +201,14 @@ pub fn parse_input(input: &str) -> Vec<Blueprint> {
 }
 
 #[aoc(day19, part1)]
-fn sum_quality_levels(input: &Vec<Blueprint>) -> u64 {
+fn sum_quality_levels(input: &[Blueprint]) -> u64 {
     input
         .iter()
         .fold(0, |sum, bp| sum + bp.largest_geode(24) * bp.id as u64)
 }
 
 #[aoc(day19, part2)]
-fn mul_largest_geodes(input: &Vec<Blueprint>) -> u64 {
+fn mul_largest_geodes(input: &[Blueprint]) -> u64 {
     let nums = input[0..3]
         .iter()
         .map(|bp| bp.largest_geode(32))

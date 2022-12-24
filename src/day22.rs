@@ -34,12 +34,12 @@ impl Facing {
 
     fn rotate_cw(&self) -> Facing {
         let value = *self as i8;
-        return Facing::from_i8((value + 1).rem(4));
+        Facing::from_i8((value + 1).rem(4))
     }
 
     fn rotate_ccw(&self) -> Facing {
         let value = *self as i8;
-        return Facing::from_i8((value - 1).rem_euclid(4));
+        Facing::from_i8((value - 1).rem_euclid(4))
     }
 
     fn as_vector(&self) -> Point {
@@ -62,20 +62,16 @@ fn parse_map(input: &str) -> Grid<char> {
     let height = lines.len();
     let width = lines.iter().fold(0, |max, l| cmp::max(max, l.len()));
     let mut cells = vec![' '; width * height];
-    let mut y = 0;
-    for row in lines {
-        let mut x = 0;
-        for col in row {
+    for (y, row) in lines.into_iter().enumerate() {
+        for (x, col) in row.into_iter().enumerate() {
             cells[y * width + x] = col;
-            x += 1
         }
-        y += 1;
     }
     Grid::new(&cells, width)
 }
 
 fn parse_path(input: &str) -> Vec<Move> {
-    assert!(input.chars().nth(0).unwrap().is_numeric());
+    assert!(input.chars().next().unwrap().is_numeric());
     let mut path = Vec::new();
     let mut number = 0;
     for c in input.chars() {
@@ -115,7 +111,7 @@ pub struct SimpleWraparound<'a> {
 
 impl SimpleWraparound<'_> {
     fn new(map: &Grid<char>) -> SimpleWraparound {
-        SimpleWraparound { map: map }
+        SimpleWraparound { map }
     }
 
     fn wraparound(&self, pos: &Point, facing: &Facing) -> Point {
@@ -167,11 +163,11 @@ fn move_in_map(map: &dyn WrapLogic, pos: &Point, facing: &Facing) -> (Point, Fac
 
 fn follow_path(
     map: &dyn WrapLogic,
-    path: &Vec<Move>,
+    path: &[Move],
     start: &Point,
     facing: &Facing,
 ) -> (Point, Facing) {
-    let mut state = (start.clone(), facing.clone());
+    let mut state = (*start, *facing);
     for movement in path.iter() {
         match movement {
             Move::Right => state.1 = state.1.rotate_cw(),
@@ -229,8 +225,8 @@ impl CubeNet<'_> {
         CubeNet {
             size: (4, 4),
             cells: vec![0, 0, 1, 0, 2, 3, 4, 0, 0, 0, 5, 6, 0, 0, 0, 0],
-            connections: connections,
-            map: map,
+            connections,
+            map,
         }
     }
 
@@ -259,8 +255,8 @@ impl CubeNet<'_> {
         CubeNet {
             size: (50, 50),
             cells: vec![0, 1, 2, 0, 0, 3, 0, 0, 4, 5, 0, 0, 6, 0, 0, 0],
-            connections: connections,
-            map: map,
+            connections,
+            map,
         }
     }
 
@@ -276,8 +272,8 @@ impl CubeNet<'_> {
     }
 
     fn cube_at(&self, x: i32, y: i32) -> Option<i32> {
-        if x >= 0 && x < 4 && y >= 0 && y < 4 {
-            let cube = *self.cells.iter().nth((4 * y + x) as usize).unwrap();
+        if (0..4).contains(&x) && (0..4).contains(&y) {
+            let cube = *self.cells.get((4 * y + x) as usize).unwrap();
             if cube != 0 {
                 return Some(cube);
             }
@@ -298,13 +294,12 @@ impl CubeNet<'_> {
             Facing::Down => width - 1 - pos.x,
             Facing::Up => pos.x,
         };
-        let new_pos = match new_facing {
+        match new_facing {
             Facing::Right => Point::new_3d(0, relative, pos.z),
             Facing::Left => Point::new_3d(width - 1, height - 1 - relative, pos.z),
             Facing::Down => Point::new_3d(width - 1 - relative, 0, pos.z),
             Facing::Up => Point::new_3d(relative, height - 1, pos.z),
-        };
-        new_pos
+        }
     }
 
     fn move_to_other_face(&self, pos: &Point, facing: &Facing) -> (Point, Facing) {
@@ -326,7 +321,7 @@ impl CubeNet<'_> {
         let dir = facing.as_vector();
         if let Some(cube) = self.cube_at(cube_x + dir.x, cube_y + dir.y) {
             new_pos.z = cube;
-            return (new_pos, *facing);
+            (new_pos, *facing)
         } else {
             let (cube, new_facing) = self.get_cube_with_facing(cube_x, cube_y, facing);
             new_pos.z = cube;

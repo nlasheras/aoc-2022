@@ -18,8 +18,8 @@ pub fn parse_input(input: &str) -> Vec<Number> {
         .collect()
 }
 
-fn mix(input: &Vec<Number>) -> Vec<Number> {
-    let mut mixed = input.clone();
+fn mix(input: &[Number]) -> Vec<Number> {
+    let mut mixed = input.to_owned();
 
     for i in 0..input.len() {
         let n = mixed.iter().find(|n| n.index == i).unwrap();
@@ -39,7 +39,7 @@ fn mix(input: &Vec<Number>) -> Vec<Number> {
 }
 
 #[aoc(day20, part1)]
-fn decrypt_sum_3(input: &Vec<Number>) -> u64 {
+fn decrypt_sum_3(input: &[Number]) -> u64 {
     let mixed = mix(input);
     let zero = mixed.iter().position(|n| n.n == 0).unwrap();
     (mixed[(1000 + zero) % mixed.len()].n
@@ -48,7 +48,7 @@ fn decrypt_sum_3(input: &Vec<Number>) -> u64 {
 }
 
 #[aoc(day20, part2)]
-fn decrypt_sum_3_v2(input: &Vec<Number>) -> u64 {
+fn decrypt_sum_3_v2(input: &[Number]) -> u64 {
     let decrypted = input
         .iter()
         .map(|num| Number {
@@ -56,7 +56,7 @@ fn decrypt_sum_3_v2(input: &Vec<Number>) -> u64 {
             index: num.index,
         })
         .collect::<Vec<Number>>();
-    let mut mixed = decrypted.clone();
+    let mut mixed = decrypted;
     for _ in 0..10 {
         mixed = mix(&mixed);
     }

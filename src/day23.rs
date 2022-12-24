@@ -26,12 +26,10 @@ pub fn parse_input(input: &str) -> BTreeSet<Elf> {
             .filter(|i| *i != -1)
             .collect::<Vec<i32>>()
     });
-    let mut y = 0;
-    for row in rows {
+    for (y, row) in rows.into_iter().enumerate() {
         for x in row {
-            map.insert(Elf::new(x, y));
+            map.insert(Elf::new(x, y as i32));
         }
-        y += 1;
     }
     map
 }

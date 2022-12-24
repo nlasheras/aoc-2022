@@ -14,7 +14,7 @@ pub struct Blizzard {
 impl Blizzard {
     fn new(pos: (i32, i32), dir: char) -> Blizzard {
         assert!(dir == '>' || dir == '<' || dir == 'v' || dir == '^');
-        Blizzard { pos: pos, dir: dir }
+        Blizzard { pos, dir }
     }
 
     fn as_vec(&self) -> (i32, i32) {
@@ -56,10 +56,10 @@ impl Valley {
                     .collect::<Vec<&Blizzard>>();
                 if !blizzards.is_empty() {
                     if blizzards.len() > 1 {
-                        ret.push(blizzards.len().to_string().chars().nth(0).unwrap());
+                        ret.push(blizzards.len().to_string().chars().next().unwrap());
                         continue;
                     }
-                    ret.push(blizzards.iter().nth(0).unwrap().dir);
+                    ret.push(blizzards.get(0).unwrap().dir);
                     continue;
                 }
                 let c = self.map.cell_at(x, y).unwrap();
@@ -70,7 +70,7 @@ impl Valley {
         ret
     }
 
-    fn simulate(&self, blizzards: &mut Vec<Blizzard>, minutes: usize) {
+    fn simulate(&self, blizzards: &mut [Blizzard], minutes: usize) {
         let (width, height) = self.map.size();
         for b in blizzards.iter_mut() {
             for _ in 0..minutes {
@@ -107,7 +107,7 @@ pub fn parse_input(input: &str) -> Valley {
         .map(|s| s.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
     let height = rows.len() as i32;
-    let width = rows.iter().nth(0).unwrap().len() as i32;
+    let width = rows.get(0).unwrap().len() as i32;
     let mut cells = rows.into_iter().flatten().collect::<Vec<char>>();
     let mut blizzards = Vec::new();
     for y in 0..height {
@@ -133,8 +133,8 @@ pub fn parse_input(input: &str) -> Valley {
     }
 }
 
-fn dist(pos: (i32, i32), goal: (i32, i32)) -> u64 {
-    (goal.0 - pos.0).abs() as u64 + (goal.1 - pos.1).abs() as u64
+fn dist(pos: (i32, i32), goal: (i32, i32)) -> u32 {
+    (goal.0 - pos.0).unsigned_abs() + (goal.1 - pos.1).unsigned_abs()
 }
 
 pub fn find_path(input: &Valley) -> Option<i32> {

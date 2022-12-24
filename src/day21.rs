@@ -2,7 +2,7 @@ use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use std::collections::HashMap;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Monkey {
     Number(i64),
     Add(String, String),
@@ -16,7 +16,7 @@ impl Monkey {
         if let Ok(number) = input.parse::<i64>() {
             return Monkey::Number(number);
         }
-        let parts = input.split(" ").collect::<Vec<&str>>();
+        let parts = input.split(' ').collect::<Vec<&str>>();
         match parts[1] {
             "+" => Monkey::Add(parts[0].to_string(), parts[2].to_string()),
             "-" => Monkey::Sub(parts[0].to_string(), parts[2].to_string()),
@@ -53,10 +53,10 @@ fn get_monkey(map: &Monkeys, key: &str) -> i64 {
     let monkey = &map[key];
     match monkey {
         Monkey::Number(n) => *n,
-        Monkey::Add(k1, k2) => get_monkey(map, &k1) + get_monkey(map, &k2),
-        Monkey::Sub(k1, k2) => get_monkey(map, &k1) - get_monkey(map, &k2),
-        Monkey::Mul(k1, k2) => get_monkey(map, &k1) * get_monkey(map, &k2),
-        Monkey::Div(k1, k2) => get_monkey(map, &k1) / get_monkey(map, &k2),
+        Monkey::Add(k1, k2) => get_monkey(map, k1) + get_monkey(map, k2),
+        Monkey::Sub(k1, k2) => get_monkey(map, k1) - get_monkey(map, k2),
+        Monkey::Mul(k1, k2) => get_monkey(map, k1) * get_monkey(map, k2),
+        Monkey::Div(k1, k2) => get_monkey(map, k1) / get_monkey(map, k2),
     }
 }
 
