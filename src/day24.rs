@@ -3,6 +3,7 @@ use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use priority_queue::DoublePriorityQueue;
 use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
 #[derive(Clone)]
 pub struct Blizzard {
@@ -135,23 +136,45 @@ pub fn find_path(input: &Valley) -> Option<i32> {
     let mut open_set = DoublePriorityQueue::new();
     open_set.push((input.start, 0), 0);
 
+    let mut state_cache = BTreeMap::new();
+
     let mut closed_set = BTreeSet::new();
 
+    let mut _count = 0;
+
+    let max_dist = dist(input.start, input.end);
+    let mut min_time = usize::MAX;
+    let mut _prune = 0;
     while !open_set.is_empty() {
+        _count += 1;
+
         // get the element with smallest fScore
         let (tmp, _priority) = open_set.pop_min().unwrap();
         let (current, time) = tmp;
+        if time + dist(current, input.end) as usize >= min_time {
+            _prune += 1;
+            continue;
+        }
         if closed_set.contains(&tmp) {
             continue;
         }
 
+        if _count % 100 == 0 {
+            println!("Eval {:?} with t = {} (remaining={}, pruned={})", current, time, open_set.len(), _prune);
+            _prune = 0;
+        }
+
         if current == input.end {
-            return Some(time as i32);
+            if time < min_time {
+                println!("Found time {}  in {} states (remaining {})", time, _count, open_set.len());
+                min_time = time;
+                continue;
+            }
         }
 
         closed_set.insert(tmp);
 
-        let state = input.tick(time + 1);
+        let state = state_cache.entry(time+1).or_insert(input.tick(time + 1));
         if !state.iter().any(|b| b.pos == current) {
             // wait state
             open_set.push((current, time + 1), _priority + 10_000);
@@ -164,13 +187,22 @@ pub fn find_path(input: &Valley) -> Option<i32> {
             if c != '.' {
                 continue;
             }
+
+            let d = dist(candidate, input.end) as usize;
+            if time + d >= min_time {
+                continue;
+            }
+
             if state.iter().any(|b| b.pos == candidate) {
                 continue;
             }
 
-            let score = dist(candidate, input.end) + 10_000 * time as u64;
-            open_set.push((candidate, time + 1), score);
+            let score  = d * 10_000 + time;
+            open_set.push((candidate, time + 1), score as i32);
         }
+    }
+    if min_time != usize::MAX {
+        return Some(min_time as i32)
     }
     None
 }
