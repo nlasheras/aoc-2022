@@ -1,31 +1,9 @@
+use crate::utils::Point;
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use itertools::Itertools;
 use std::cmp;
 use std::collections::BTreeSet;
-use std::ops;
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
-pub struct Point {
-    pub x: i32,
-    pub y: i32,
-}
-
-impl Point {
-    fn new(x: i32, y: i32) -> Point {
-        Point { x: x, y: y }
-    }
-}
-
-impl ops::Add<Point> for Point {
-    type Output = Point;
-    fn add(self, _rhs: Point) -> Point {
-        Point {
-            x: self.x + _rhs.x,
-            y: self.y + _rhs.y,
-        }
-    }
-}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Line {
@@ -52,11 +30,11 @@ impl Line {
 #[aoc_generator(day14)]
 pub fn parse_input(input: &str) -> Vec<Line> {
     input
-        .split("\n")
-        .map(|s| {
+        .lines()
+        .flat_map(|s| {
             s.split(" -> ")
                 .map(|s| {
-                    s.split(",")
+                    s.split(',')
                         .map(|s| s.parse::<i32>().unwrap())
                         .collect_tuple::<(i32, i32)>()
                         .unwrap()
@@ -66,7 +44,6 @@ pub fn parse_input(input: &str) -> Vec<Line> {
                 .map(|w| Line::new(w[0], w[1]))
                 .collect::<Vec<Line>>()
         })
-        .flatten()
         .collect()
 }
 
@@ -89,10 +66,10 @@ impl World<'_> {
             .unwrap()
             + 2;
         World {
-            rocks: rocks,
+            rocks,
             resting_sand: SandSet::new(),
             source: Point::new(500, 0),
-            floor: floor,
+            floor,
             simulating: None,
         }
     }

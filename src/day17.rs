@@ -118,10 +118,10 @@ impl World {
     }
 
     fn collide(&self, rock: &Rock) -> bool {
-        self.rocks.iter().rev().any(|r| r.collide(&rock))
+        self.rocks.iter().rev().any(|r| r.collide(rock))
     }
 
-    fn check_pattern(&mut self) -> () {
+    fn check_pattern(&mut self) {
         let max_width = self.heights.len() / 2;
 
         for rw in 0..=max_width - 10 {
@@ -144,7 +144,7 @@ impl World {
     pub fn tick(&mut self, streams: &Vec<char>) -> bool {
         if self.falling.is_none() {
             let pos = Point::new(2, self.highest_height() + 1 + 3);
-            self.falling = Some(Rock::new(pos, self.next_shape.clone()));
+            self.falling = Some(Rock::new(pos, self.next_shape));
             self.next_shape = self.next_shape.next();
         }
 
@@ -156,7 +156,7 @@ impl World {
             _ => panic!("Wrong index!"),
         };
 
-        let mut rock = self.falling.unwrap().clone();
+        let mut rock = self.falling.unwrap();
         if rock.bb().0.x + gas_dir.x >= 0 && rock.bb().1.x + gas_dir.x < 7 {
             rock.pos = rock.pos + gas_dir;
 
@@ -231,7 +231,7 @@ impl World {
             }
             buf.push('\n');
         }
-        return buf;
+        buf
     }
 }
 
@@ -240,7 +240,7 @@ pub fn find_tower_height(input: &Vec<char>) -> u64 {
     let mut world = World::new();
 
     while world.pattern.is_none() && world.rocks.len() < 2022 {
-        world.tick(&input);
+        world.tick(input);
     }
 
     world.sum_height_using_pattern(2022) as u64
@@ -251,7 +251,7 @@ pub fn find_tower_height_2(input: &Vec<char>) -> u64 {
     let mut world = World::new();
 
     while world.pattern.is_none() {
-        world.tick(&input);
+        world.tick(input);
     }
 
     world.sum_height_using_pattern(1_000_000_000_000) as u64

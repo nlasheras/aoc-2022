@@ -39,7 +39,7 @@ pub fn parse_input(input: &str) -> Vec<Sensor> {
         .collect()
 }
 
-fn cannot_contain_beacon(sensors: &Vec<Sensor>, pos: (i32, i32), count_beacons: bool) -> bool {
+fn cannot_contain_beacon(sensors: &[Sensor], pos: (i32, i32), count_beacons: bool) -> bool {
     let candidate = Point::new(pos.0, pos.1);
     if sensors.iter().any(|s| s.closest_beacon == candidate) {
         return count_beacons; // there is already a beacon
@@ -50,7 +50,7 @@ fn cannot_contain_beacon(sensors: &Vec<Sensor>, pos: (i32, i32), count_beacons: 
     })
 }
 
-fn count_positions_in_row(sensors: &Vec<Sensor>, row: i32) -> u64 {
+fn count_positions_in_row(sensors: &[Sensor], row: i32) -> u64 {
     let mut min_x = i32::MAX;
     let mut max_x = i32::MIN;
     sensors.iter().for_each(|s| {
@@ -64,11 +64,11 @@ fn count_positions_in_row(sensors: &Vec<Sensor>, row: i32) -> u64 {
 }
 
 #[aoc(day15, part1)]
-pub fn count_positions_in_row_10(input: &Vec<Sensor>) -> u64 {
+pub fn count_positions_in_row_10(input: &[Sensor]) -> u64 {
     count_positions_in_row(input, 2000000)
 }
 
-pub fn find_distress_signal_bruteforce(sensors: &Vec<Sensor>, min: i32, max: i32) -> u64 {
+pub fn find_distress_signal_bruteforce(sensors: &[Sensor], min: i32, max: i32) -> u64 {
     for x in min..=max {
         for y in min..=max {
             if cannot_contain_beacon(sensors, (x, y), true) {
@@ -98,7 +98,7 @@ fn get_perimeter(s: &Sensor) -> Vec<Point> {
     points
 }
 
-pub fn find_distress_signal(sensors: &Vec<Sensor>, min: i32, max: i32) -> u64 {
+pub fn find_distress_signal(sensors: &[Sensor], min: i32, max: i32) -> u64 {
     for s in sensors.iter() {
         let perimeter = get_perimeter(s);
         for p in perimeter {
@@ -115,7 +115,7 @@ pub fn find_distress_signal(sensors: &Vec<Sensor>, min: i32, max: i32) -> u64 {
 }
 
 #[aoc(day15, part2)]
-pub fn find_distress_signal_in_range(input: &Vec<Sensor>) -> u64 {
+pub fn find_distress_signal_in_range(input: &[Sensor]) -> u64 {
     find_distress_signal(input, 0, 4000000)
 }
 

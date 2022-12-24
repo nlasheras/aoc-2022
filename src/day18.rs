@@ -10,7 +10,7 @@ pub fn parse_input(input: &str) -> BTreeSet<Cube> {
     input
         .lines()
         .map(|x| {
-            x.split(",")
+            x.split(',')
                 .map(|s| s.parse::<i32>().unwrap())
                 .collect_tuple()
                 .unwrap()
@@ -32,7 +32,7 @@ pub fn find_surface_area(cubes: &BTreeSet<Cube>) -> u64 {
         ]
         .into_iter()
         .map(|d| (c.0 + d.0, c.1 + d.1, c.2 + d.2))
-        .filter(|c| !cubes.contains(&c))
+        .filter(|c| !cubes.contains(c))
         .count();
     }
     sum as u64
@@ -50,7 +50,7 @@ fn is_open_water(cube: &Cube, min: &Cube, max: &Cube) -> bool {
 fn in_pocket(set: &BTreeSet<Cube>, cube: &Cube, min: &Cube, max: &Cube) -> bool {
     let mut closed_set = BTreeSet::new();
     let mut open_set = Vec::new();
-    open_set.push(cube.clone());
+    open_set.push(*cube);
     while !open_set.is_empty() {
         let c = open_set.pop().unwrap();
         closed_set.insert(c);
@@ -107,7 +107,7 @@ pub fn find_surface_area_without_pockets(cubes: &BTreeSet<Cube>) -> u64 {
         ]
         .into_iter()
         .map(|d| (c.0 + d.0, c.1 + d.1, c.2 + d.2))
-        .filter(|c| !cubes.contains(&c) && !in_pocket(&cubes, &c, &min, &max))
+        .filter(|c| !cubes.contains(c) && !in_pocket(cubes, c, &min, &max))
         .count();
     }
     sum as u64

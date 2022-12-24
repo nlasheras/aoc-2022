@@ -20,7 +20,7 @@ pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
                 .unwrap()
                 .replace("Valve ", "");
             let flow = parts[0]
-                .split("=")
+                .split('=')
                 .collect::<Vec<&str>>()
                 .last()
                 .unwrap()
@@ -49,7 +49,7 @@ pub fn parse_input(input: &str) -> Graph<(String, i32), i32> {
         let src = tmp.get(&l.0).unwrap();
         for tunnel in &l.2 {
             let dest = tmp.get(tunnel).unwrap();
-            edges.push((src.clone(), dest.clone()));
+            edges.push((*src, *dest));
         }
     }
     graph.extend_with_edges(&edges);

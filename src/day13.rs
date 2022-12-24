@@ -15,14 +15,14 @@ impl std::fmt::Display for PacketData {
         match self {
             Self::Integer(n) => buffer.push_str(&format!("{}", n)),
             Self::List(contents) => {
-                buffer.push_str("[");
+                buffer.push('[');
                 for packet in contents {
                     if buffer.len() > 1 {
-                        buffer.push_str(",");
+                        buffer.push(',');
                     }
                     buffer.push_str(&format!("{}", packet));
                 }
-                buffer.push_str("]");
+                buffer.push(']');
             }
         }
         write!(f, "{}", buffer)
@@ -34,7 +34,7 @@ impl PacketData {
         if input.starts_with('[') {
             // List
             let mut values = Vec::new();
-            let input = &input[1..input.len()-1];
+            let input = &input[1..input.len() - 1];
             let mut start = 0;
             let mut level = 0;
             for (index, c) in input.char_indices() {
@@ -111,7 +111,7 @@ pub fn parse_input(input: &str) -> Vec<(PacketData, PacketData)> {
     input
         .split("\n\n")
         .map(|s| {
-            let mut parts = s.split("\n");
+            let mut parts = s.split('\n');
             (
                 PacketData::from(parts.next().unwrap()),
                 PacketData::from(parts.next().unwrap()),
@@ -121,7 +121,7 @@ pub fn parse_input(input: &str) -> Vec<(PacketData, PacketData)> {
 }
 
 #[aoc(day13, part1)]
-fn sum_packets_in_order(input: &Vec<(PacketData, PacketData)>) -> u64 {
+fn sum_packets_in_order(input: &[(PacketData, PacketData)]) -> u64 {
     input
         .iter()
         .map(|pair| pair.0.partial_cmp(&pair.1))
@@ -135,7 +135,7 @@ fn sum_packets_in_order(input: &Vec<(PacketData, PacketData)>) -> u64 {
 }
 
 #[aoc(day13, part2)]
-fn locate_decoder_key(input: &Vec<(PacketData, PacketData)>) -> u64 {
+fn locate_decoder_key(input: &[(PacketData, PacketData)]) -> u64 {
     let mut input_packets = input
         .iter()
         .map(|p| vec![p.0.clone(), p.1.clone()])
