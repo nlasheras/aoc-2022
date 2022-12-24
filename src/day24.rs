@@ -2,6 +2,7 @@ use crate::utils::Grid;
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 
+#[derive(Clone)]
 pub struct Blizzard {
     pos: (i32, i32),
     dir: char,
@@ -24,6 +25,7 @@ impl Blizzard {
     }
 }
 
+#[derive(Clone)]
 pub struct Valley {
     map: Grid<char>,
     start: (i32, i32),
@@ -63,6 +65,27 @@ impl Valley {
         }
         ret
     }
+
+    fn tick(&mut self) {
+        let (width, height) = self.map.size();
+        for b in self.blizzards.iter_mut() {
+            let dir = b.as_vec();
+            let mut new_pos = b.pos;
+            loop {
+                new_pos = (
+                    (new_pos.0 + dir.0).rem_euclid(width as i32),
+                    (new_pos.1 + dir.1).rem_euclid(height as i32),
+                );
+                let c = self.map.cell_at(new_pos.0, new_pos.1);
+                if let Some(c) = c {
+                    if c == '.' {
+                        break;
+                    }
+                }
+            }
+            b.pos = new_pos;
+        }
+    }
 }
 
 #[aoc_generator(day24)]
@@ -99,7 +122,12 @@ pub fn parse_input(input: &str) -> Valley {
 }
 
 pub fn find_path(input: &Valley) -> Vec<(i32, i32)> {
-    println!("{}", input.print(Some((1, 0))));
+    let mut valley = input.clone();
+    println!("{}", valley.print(Some((1, 0))));
+    valley.tick();
+    println!("{}", valley.print(Some((1, 0))));
+    valley.tick();
+    println!("{}", valley.print(Some((1, 0))));
     Vec::new()
 }
 
