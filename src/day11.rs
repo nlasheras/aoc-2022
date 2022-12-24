@@ -19,7 +19,7 @@ impl Monkey {
             .map(|s| s.parse::<u64>().unwrap())
             .collect::<Vec<u64>>();
         Monkey {
-            items: items,
+            items,
             operation: Operation::from(lines[1]),
             test: Test::from(&lines[2..=4]),
         }
@@ -57,7 +57,7 @@ impl Operation {
             return Operation::Pow;
         }
         assert!(expression.starts_with("old "));
-        let parts = expression.split(" ").collect::<Vec<&str>>();
+        let parts = expression.split(' ').collect::<Vec<&str>>();
         let n = parts[2].parse::<u64>().unwrap();
         let operator = parts[1];
         match operator {
@@ -111,11 +111,11 @@ impl Test {
 
 #[aoc_generator(day11)]
 pub fn parse_input(input: &str) -> Vec<Monkey> {
-    input.split("\n\n").map(|s| Monkey::from(s)).collect()
+    input.split("\n\n").map(Monkey::from).collect()
 }
 
-fn get_monkey_business(input: &Vec<Monkey>, rounds: i32, relief: u64) -> u64 {
-    let mut monkeys = input.clone();
+fn get_monkey_business(input: &[Monkey], rounds: i32, relief: u64) -> u64 {
+    let mut monkeys = input.to_owned();
     let mut throws = vec![0u64; monkeys.len()];
     let mcd = monkeys
         .iter()
@@ -142,12 +142,12 @@ fn get_monkey_business(input: &Vec<Monkey>, rounds: i32, relief: u64) -> u64 {
 }
 
 #[aoc(day11, part1)]
-fn get_monkey_business_after_20rounds(input: &Vec<Monkey>) -> u64 {
+fn get_monkey_business_after_20rounds(input: &[Monkey]) -> u64 {
     get_monkey_business(input, 20, 3)
 }
 
 #[aoc(day11, part2)]
-fn get_monkey_business_after_10krounds(input: &Vec<Monkey>) -> u64 {
+fn get_monkey_business_after_10krounds(input: &[Monkey]) -> u64 {
     get_monkey_business(input, 10_000, 1)
 }
 

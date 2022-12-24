@@ -1,9 +1,11 @@
+#![allow(dead_code)]
+
 use std::fmt;
 use std::ops;
 
 // Grid by Belén Albeza
 // https://github.com/belen-albeza/aoc-2021/blob/main/src/utils.rs
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Grid<T> {
     pub cells: Vec<T>,
     width: usize,
@@ -100,11 +102,11 @@ pub struct Point {
 
 impl Point {
     pub fn new(x: i32, y: i32) -> Point {
-        Point { x: x, y: y, z: 0 }
+        Point { x, y, z: 0 }
     }
 
     pub fn new_3d(x: i32, y: i32, z: i32) -> Point {
-        Point { x: x, y: y, z: z }
+        Point { x, y, z }
     }
 
     pub fn manhattan_dist(&self, other: &Point) -> i32 {

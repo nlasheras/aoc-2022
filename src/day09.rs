@@ -10,7 +10,7 @@ pub fn parse_input(input: &str) -> Vec<(String, u64)> {
     input
         .lines()
         .map(|s| {
-            let parts: Vec<&str> = s.split(" ").collect();
+            let parts: Vec<&str> = s.split(' ').collect();
             (String::from(parts[0]), parts[1].parse::<u64>().unwrap())
         })
         .collect()
@@ -53,7 +53,7 @@ fn count_tail_positions(motions: &Vec<(String, u64)>) -> u64 {
         }
     }
 
-    set.into_iter().count() as u64
+    set.len() as u64
 }
 
 fn count_tail_positions_arbitrary(motions: &Vec<(String, u64)>, rope_len: usize) -> u64 {
@@ -84,7 +84,7 @@ fn count_tail_positions_arbitrary(motions: &Vec<(String, u64)>, rope_len: usize)
         }
     }
 
-    set.into_iter().count() as u64
+    set.len() as u64
 }
 
 #[aoc(day9, part2)]

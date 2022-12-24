@@ -29,8 +29,8 @@ fn diff_height(current: char, other: char) -> i32 {
     (fix_start_end(other) as i32) - (fix_start_end(current) as i32)
 }
 
-fn h_func(pos: (i32, i32), goal: (i32, i32)) -> u64 {
-    (goal.0 - pos.0).abs() as u64 + (goal.1 - pos.1).abs() as u64
+fn h_func(pos: (i32, i32), goal: (i32, i32)) -> u32 {
+    (goal.0 - pos.0).unsigned_abs() + (goal.1 - pos.1).unsigned_abs()
 }
 
 fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Vec<(i32, i32)>> {
@@ -45,7 +45,7 @@ fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Ve
     g_score.insert(start, 0u64);
 
     let mut f_score = BTreeMap::new();
-    f_score.insert(start, h_func(start, end));
+    f_score.insert(start, h_func(start, end) as u64);
 
     while !open_set.is_empty() {
         // get the element with smallest fScore
@@ -84,14 +84,14 @@ fn find_path(grid: &Grid<char>, start: (i32, i32), end: (i32, i32)) -> Option<Ve
 
             let neighbor_score = g_score.entry(candidate).or_insert(inf).to_owned();
             if tentative_g_score < neighbor_score {
-                *came_from.entry(candidate).or_insert(current) = current.clone();
+                *came_from.entry(candidate).or_insert(current) = current;
 
                 g_score
                     .entry(candidate)
                     .and_modify(|e| *e = tentative_g_score)
                     .or_insert(tentative_g_score);
 
-                let score = tentative_g_score + h_func(candidate, end);
+                let score = tentative_g_score + h_func(candidate, end) as u64;
                 f_score
                     .entry(candidate)
                     .and_modify(|e| *e = score)

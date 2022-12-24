@@ -11,12 +11,12 @@ pub fn parse_input(input: &str) -> Vec<Instruction> {
     input
         .lines()
         .map(|s| {
-            let parts: Vec<&str> = s.split(" ").collect();
-            return match parts[0] {
+            let parts: Vec<&str> = s.split(' ').collect();
+            match parts[0] {
                 "noop" => Instruction::Noop,
                 "addx" => Instruction::Add(parts[1].parse::<i64>().unwrap()),
                 _ => panic!("Wrong input"),
-            };
+            }
         })
         .collect()
 }
@@ -41,8 +41,8 @@ fn get_x_values(instructions: &Vec<Instruction>, interesting: &Vec<usize>) -> Ve
                 x += instructions[start_instruction..i]
                     .iter()
                     .fold(0, |x, instruction| match instruction {
-                        Instruction::Add(n) => return x + n,
-                        Instruction::Noop => return x,
+                        Instruction::Add(n) => x + n,
+                        Instruction::Noop => x,
                     });
 
                 ret.push(x);
@@ -72,7 +72,7 @@ fn render_crt(instructions: &Vec<Instruction>) -> String {
     let xs = get_x_values(instructions, &(1..=240).collect::<Vec<usize>>());
     let mut buffer = "".to_string();
     for i in 1..=240 {
-        let x = xs[i-1];
+        let x = xs[i - 1];
         let col = ((i - 1) % 40) as i64;
 
         if (x - col).abs() <= 1 {
@@ -81,7 +81,8 @@ fn render_crt(instructions: &Vec<Instruction>) -> String {
             buffer.push('.');
         }
 
-        if col == 39 && i != 240 { //add newlines after column 40, 80 
+        if col == 39 && i != 240 {
+            //add newlines after column 40, 80
             buffer.push('\n')
         };
     }
