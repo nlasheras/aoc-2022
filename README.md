@@ -100,3 +100,7 @@ This one was easier than yesterday. For part 2 I can probably speed it up a bit 
 ### Day 24
 
 I got a good idea to get a nice speed up but it wasn't good enough and I still needed 20 min for part 1. Then I realized that `or_insert` wasn't working as intented. When manually inserting in the map myself I got the times to under seconds. Reworking the simulation so I can simulate from a previous step has speed up the code a bit. 
+
+### Day 25
+
+This was suposed to be an easy one, but then it surprised me with some numbers of the real input not fitting into the `i32` again. 
