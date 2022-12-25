@@ -17,8 +17,8 @@ impl SnafuNumber {
     fn sum_of_digits(n: i64) -> i64 {
         let mut pow = 1;
         let mut sum = 0;
-        for _ in 0..=n {
-            sum += pow;
+        for _ in 0..n {
+            sum += 2 * pow;
             pow *= 5;
         }
         sum
@@ -30,18 +30,18 @@ impl SnafuNumber {
 
     fn from_u64(input: u64) -> SnafuNumber {
         let mut digits = Vec::new();
-        let mut index = 1_i64;
+        let mut num_digits = 1_i64;
         let mut remaining = input as i64;
-        while Self::sum_of_digits(index) < remaining {
-            index += 1
+        while Self::sum_of_digits(num_digits) < remaining {
+            num_digits += 1
         }
-        while index >= 0 {
-            let next_positions = Self::sum_of_digits(index - 1);
+        for index in (0..num_digits).rev() {
+            let next_positions = Self::sum_of_digits(index);
             let position = Self::pos(index);
             let n = if remaining >= 0 {
-                (remaining + 2 * next_positions) / position
+                (remaining + next_positions) / position
             } else {
-                (remaining - 2 * next_positions) / position
+                (remaining - next_positions) / position
             };
             let d = match n {
                 2 => '2',
@@ -52,13 +52,9 @@ impl SnafuNumber {
                 _ => panic!("Wrong digit! {n}"),
             };
             remaining -= position * n;
-            index -= 1;
             digits.push(d);
         }
         digits.reverse();
-        while digits.iter().last() == Some(&'0') {
-            digits.pop();
-        }
         SnafuNumber { digits }
     }
 
@@ -131,6 +127,12 @@ mod tests {
     fn test_day25_snafu_to_string_test() {
         let n = SnafuNumber::from_u64(20);
         assert_eq!(n.to_string(), "1-0");
+    }
+
+    #[test]
+    fn test_day25_snafu_to_string_11() {
+        let n = SnafuNumber::from_u64(11);
+        assert_eq!(n.to_string(), "21");
     }
 
     #[test]
